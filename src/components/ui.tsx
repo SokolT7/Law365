@@ -1,5 +1,5 @@
-import type { Severity, FindingStatus } from "@/lib/types";
-import { SEVERITY_LABEL, STATUS_LABEL } from "@/lib/format";
+import type { DocStatus } from "@/lib/types";
+import { STATUS_LABEL } from "@/lib/format";
 import { ILock, ISpark } from "@/components/Icons";
 
 export function PageHeader({
@@ -27,22 +27,24 @@ export function TenantBanner() {
     <div className="banner">
       <ILock size={16} />
       <span>
-        <b>Radi unutar vašeg sustava.</b> Podaci ne napuštaju ured · AI se ne trenira na vašim
-        podacima · svaki odgovor ima naveden izvor.
+        <b>Radi unutar vašeg sustava.</b> Obradu pokreće vaš n8n · Claude se ne trenira na vašim
+        podacima · svaka stavka ima naveden izvor.
       </span>
     </div>
   );
 }
 
-export function SeverityBadge({ severity }: { severity: Severity }) {
-  return <span className={`badge ${severity}`}>{SEVERITY_LABEL[severity]}</span>;
+const STATUS_CLASS: Record<DocStatus, string> = {
+  u_obradi: "srednja",
+  analizirano: "niska",
+  greska: "visoka",
+};
+
+export function DocStatusBadge({ status }: { status: DocStatus }) {
+  return <span className={`badge ${STATUS_CLASS[status]}`}>{STATUS_LABEL[status]}</span>;
 }
 
-export function StatusBadge({ status }: { status: FindingStatus }) {
-  return <span className={`badge ${status}`}>{STATUS_LABEL[status]}</span>;
-}
-
-export function AiNote({ label = "Generirao AI — provjerite" }: { label?: string }) {
+export function AiNote({ label = "Generirao Claude — provjerite" }: { label?: string }) {
   return (
     <span className="ai-note">
       <ISpark size={12} /> {label}
@@ -50,27 +52,17 @@ export function AiNote({ label = "Generirao AI — provjerite" }: { label?: stri
   );
 }
 
-export function RiskChart({
+export function StatusChart({
   counts,
 }: {
-  counts: { visoka: number; srednja: number; niska: number };
+  counts: { u_obradi: number; analizirano: number; greska: number };
 }) {
-  const rows: { key: Severity; label: string; cls: string }[] = [
-    { key: "visoka", label: "Visok rizik", cls: "hi" },
-    { key: "srednja", label: "Srednji rizik", cls: "mid" },
-    { key: "niska", label: "Nizak rizik", cls: "lo" },
+  const rows: { key: DocStatus; label: string; color: string; bg: string }[] = [
+    { key: "analizirano", label: "Analizirano", color: "var(--lo-fg)", bg: "var(--lo-bg)" },
+    { key: "u_obradi", label: "U obradi", color: "var(--mid-fg)", bg: "var(--mid-bg)" },
+    { key: "greska", label: "Greška", color: "var(--hi-fg)", bg: "var(--hi-bg)" },
   ];
-  const max = Math.max(1, counts.visoka, counts.srednja, counts.niska);
-  const color: Record<string, string> = {
-    hi: "var(--hi-fg)",
-    mid: "var(--mid-fg)",
-    lo: "var(--lo-fg)",
-  };
-  const bg: Record<string, string> = {
-    hi: "var(--hi-bg)",
-    mid: "var(--mid-bg)",
-    lo: "var(--lo-bg)",
-  };
+  const max = Math.max(1, counts.u_obradi, counts.analizirano, counts.greska);
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
       {rows.map((r) => {
@@ -80,15 +72,14 @@ export function RiskChart({
             <div style={{ width: 92, fontSize: 12.5, color: "var(--muted)", fontWeight: 600 }}>
               {r.label}
             </div>
-            <div style={{ flex: 1, background: bg[r.cls], borderRadius: 6, height: 22 }}>
+            <div style={{ flex: 1, background: r.bg, borderRadius: 6, height: 22 }}>
               <div
                 style={{
                   width: `${(v / max) * 100}%`,
                   minWidth: v > 0 ? 8 : 0,
-                  background: color[r.cls],
+                  background: r.color,
                   height: "100%",
                   borderRadius: 6,
-                  transition: "width .4s",
                 }}
               />
             </div>

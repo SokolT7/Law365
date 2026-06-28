@@ -2,8 +2,9 @@ import { NextResponse } from "next/server";
 import { randomUUID } from "crypto";
 import { readDB, writeDB, addAudit } from "@/lib/db";
 import { parseFile, isSupported } from "@/lib/ingest/parse";
-import { ingestContract } from "@/lib/ingest/pipeline";
-import { getMode } from "@/lib/ai/client";
+import { chunkContract } from "@/lib/ingest/chunk";
+import { fireExtraction, getBaseUrl, n8nConfig } from "@/lib/n8n";
+import type { Chunk, DocumentRec } from "@/lib/types";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -40,36 +41,49 @@ export async function POST(req: Request) {
     );
   }
 
-  const db = readDB();
-  const mode = getMode();
+  const db = await readDB();
+  const docId = randomUUID();
+  const jobId = randomUUID();
   const title = titleFromName(file.name);
 
   const clientId = randomUUID();
   db.clients.push({ id: clientId, name: "Ručno učitani dokument", sector: "—" });
   const matterId = randomUUID();
-  db.matters.push({
-    id: matterId,
-    clientId,
-    title: `Ručno učitavanje — ${title}`,
-    type: "Ručno učitavanje",
-  });
+  db.matters.push({ id: matterId, clientId, title: `Ručno učitavanje — ${title}`, type: "Dokument" });
 
-  const out = await ingestContract({
+  // indeksiranje teksta (za pitanja i odgovore)
+  const chunks: Chunk[] = chunkContract(text).map((c, i) => ({
+    id: randomUUID(),
+    documentId: docId,
+    index: i,
+    heading: c.heading,
+    text: c.text,
+  }));
+  db.chunks.push(...chunks);
+
+  const doc: DocumentRec = {
+    id: docId,
+    jobId,
     title,
     filename: file.name,
-    text,
+    type: "Dokument",
     clientId,
     matterId,
-    mode,
-  });
+    status: "u_obradi",
+    createdAt: new Date().toISOString(),
+    mode: n8nConfig().webhookUrl ? "live" : "demo",
+  };
+  db.documents.push(doc);
+  addAudit(db, "Učitao dokument na analizu", title);
 
-  db.documents.push(out.document);
-  db.chunks.push(...out.chunks);
-  db.keyTerms.push(...out.keyTerms);
-  db.obligations.push(...out.obligations);
-  db.findings.push(...out.findings);
-  addAudit(db, "Učitao i analizirao dokument", out.document.title);
-  writeDB(db);
+  // pošalji n8n-u na obradu (asinkrono — rezultat stiže na callback)
+  try {
+    await fireExtraction(doc, text, getBaseUrl(req), db.firm.name, db.user.name);
+  } catch (e) {
+    doc.status = "greska";
+    doc.error = (e as Error).message;
+  }
 
-  return NextResponse.json({ id: out.document.id });
+  await writeDB(db);
+  return NextResponse.json({ id: docId, status: doc.status });
 }

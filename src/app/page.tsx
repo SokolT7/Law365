@@ -1,74 +1,74 @@
 import Link from "next/link";
 import { readDB } from "@/lib/db";
 import { formatDate } from "@/lib/format";
-import { PageHeader, TenantBanner, RiskChart } from "@/components/ui";
+import { PageHeader, TenantBanner, StatusChart, DocStatusBadge } from "@/components/ui";
 import ResetButton from "@/components/ResetButton";
-import { IAlert, IClock, IDocs, IShield } from "@/components/Icons";
+import { IClock, IDocs, ISpark, IShield } from "@/components/Icons";
 
 export const dynamic = "force-dynamic";
 
-export default function DashboardPage() {
-  const db = readDB();
-  const open = db.findings.filter((f) => f.status === "otvoren");
+export default async function DashboardPage() {
+  const db = await readDB();
+  const docs = db.documents;
   const counts = {
-    visoka: open.filter((f) => f.severity === "visoka").length,
-    srednja: open.filter((f) => f.severity === "srednja").length,
-    niska: open.filter((f) => f.severity === "niska").length,
+    u_obradi: docs.filter((d) => d.status === "u_obradi").length,
+    analizirano: docs.filter((d) => d.status === "analizirano").length,
+    greska: docs.filter((d) => d.status === "greska").length,
   };
-  const withDates = db.obligations
-    .filter((o) => o.dueDate)
-    .sort((a, b) => +new Date(a.dueDate!) - +new Date(b.dueDate!));
-  const recent = [...db.documents]
+
+  const deadlines = docs
+    .flatMap((d) =>
+      (d.result?.datumiIRokovi ?? [])
+        .filter((x) => x.datum)
+        .map((x) => ({ docId: d.id, docTitle: d.title, opis: x.opis, datum: x.datum! }))
+    )
+    .sort((a, b) => +new Date(a.datum) - +new Date(b.datum));
+
+  const recent = [...docs]
     .sort((a, b) => +new Date(b.createdAt) - +new Date(a.createdAt))
-    .slice(0, 5);
-  const docTitle = (id: string) => db.documents.find((d) => d.id === id)?.title ?? "—";
+    .slice(0, 6);
 
   return (
     <>
-      <PageHeader title="Nadzorna ploča" subtitle="Pregled rizika, rokova i dokumenata ureda">
+      <PageHeader title="Nadzorna ploča" subtitle="Pregled dokumenata, statusa analize i rokova">
         <ResetButton />
       </PageHeader>
       <div className="content">
         <TenantBanner />
 
         <div className="grid grid-4" style={{ marginBottom: 18 }}>
-          <Stat label="Dokumenti" value={db.documents.length} foot="ukupno analizirano" Icon={IDocs} />
-          <Stat label="Otvoreni nalazi" value={open.length} foot="čeka pregled" Icon={IShield} />
-          <Stat
-            label="Visok rizik"
-            value={counts.visoka}
-            foot="prioritetno"
-            Icon={IAlert}
-            hi
-          />
-          <Stat label="Rokovi" value={withDates.length} foot="praćeni rokovi" Icon={IClock} />
+          <Stat label="Dokumenti" value={docs.length} foot="ukupno" Icon={IDocs} />
+          <Stat label="U obradi" value={counts.u_obradi} foot="analiza u tijeku" Icon={ISpark} />
+          <Stat label="Analizirano" value={counts.analizirano} foot="spremno za pregled" Icon={IShield} />
+          <Stat label="Rokovi" value={deadlines.length} foot="izdvojeni datumi" Icon={IClock} />
         </div>
 
         <div className="grid grid-2">
           <div className="card">
             <div className="card-head">
-              <h3>Izloženost riziku</h3>
-              <span className="muted">otvoreni nalazi po ozbiljnosti</span>
+              <h3>Dokumenti po statusu</h3>
             </div>
             <div className="card-pad">
-              <RiskChart counts={counts} />
+              <StatusChart counts={counts} />
             </div>
           </div>
 
           <div className="card">
             <div className="card-head">
-              <h3>Nadolazeći rokovi i obnove</h3>
-              <span className="muted">{withDates.length}</span>
+              <h3>Nadolazeći datumi i rokovi</h3>
+              <span className="muted">{deadlines.length}</span>
             </div>
             <div className="card-pad" style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              {withDates.length === 0 && <div className="empty">Nema praćenih rokova.</div>}
-              {withDates.slice(0, 5).map((o) => (
-                <div key={o.id} className="flex between" style={{ alignItems: "flex-start" }}>
+              {deadlines.length === 0 && <div className="empty">Nema izdvojenih datuma.</div>}
+              {deadlines.slice(0, 5).map((x, i) => (
+                <div key={i} className="flex between" style={{ alignItems: "flex-start", gap: 12 }}>
                   <div style={{ minWidth: 0 }}>
-                    <div style={{ fontWeight: 600, color: "var(--navy)" }}>{docTitle(o.documentId)}</div>
-                    <div className="t-sub" style={{ marginTop: 2 }}>{o.text.slice(0, 90)}…</div>
+                    <Link href={`/dokumenti/${x.docId}`} style={{ fontWeight: 600, color: "var(--navy)" }}>
+                      {x.docTitle}
+                    </Link>
+                    <div className="t-sub" style={{ marginTop: 2 }}>{x.opis}</div>
                   </div>
-                  <span className="chip mono">{formatDate(o.dueDate)}</span>
+                  <span className="chip mono">{formatDate(x.datum)}</span>
                 </div>
               ))}
             </div>
@@ -85,27 +85,21 @@ export default function DashboardPage() {
               <tr>
                 <th>Dokument</th>
                 <th>Vrsta</th>
-                <th>Nalazi</th>
+                <th>Status</th>
                 <th className="right">Datum</th>
               </tr>
             </thead>
             <tbody>
-              {recent.map((d) => {
-                const fc = db.findings.filter((f) => f.documentId === d.id);
-                const hi = fc.filter((f) => f.severity === "visoka").length;
-                return (
-                  <tr key={d.id}>
-                    <td>
-                      <Link href={`/dokumenti/${d.id}`} className="t-title">{d.title}</Link>
-                    </td>
-                    <td className="t-sub">{d.type}</td>
-                    <td>
-                      <span className="chip">{fc.length} nalaza{hi ? ` · ${hi} visok` : ""}</span>
-                    </td>
-                    <td className="right mono t-sub">{formatDate(d.createdAt)}</td>
-                  </tr>
-                );
-              })}
+              {recent.map((d) => (
+                <tr key={d.id}>
+                  <td>
+                    <Link href={`/dokumenti/${d.id}`} className="t-title">{d.title}</Link>
+                  </td>
+                  <td className="t-sub">{d.type}</td>
+                  <td><DocStatusBadge status={d.status} /></td>
+                  <td className="right mono t-sub">{formatDate(d.createdAt)}</td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>
@@ -119,13 +113,11 @@ function Stat({
   value,
   foot,
   Icon,
-  hi,
 }: {
   label: string;
   value: number;
   foot: string;
   Icon: (p: { size?: number; color?: string }) => React.ReactElement;
-  hi?: boolean;
 }) {
   return (
     <div className="stat">
@@ -133,7 +125,7 @@ function Stat({
         <span className="label">{label}</span>
         <Icon size={18} color="var(--muted)" />
       </div>
-      <div className={`value${hi ? " hi" : ""}`}>{value}</div>
+      <div className="value">{value}</div>
       <div className="foot">{foot}</div>
     </div>
   );

@@ -12,11 +12,11 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Pitanje je prazno" }, { status: 400 });
   }
 
-  const db = readDB();
+  const db = await readDB();
   const result = await answerQuestion(question, db.chunks, db.documents, getMode());
 
   addAudit(db, "Postavio pitanje (AI)", question.slice(0, 90));
-  writeDB(db);
+  await writeDB(db);
 
   return NextResponse.json(result);
 }

@@ -1,21 +1,20 @@
 import Link from "next/link";
 import { readDB } from "@/lib/db";
 import { formatDate } from "@/lib/format";
-import { PageHeader, TenantBanner } from "@/components/ui";
+import { PageHeader, TenantBanner, DocStatusBadge } from "@/components/ui";
 import UploadCard from "@/components/UploadCard";
 
 export const dynamic = "force-dynamic";
 
-export default function DocumentsPage() {
-  const db = readDB();
+export default async function DocumentsPage() {
+  const db = await readDB();
   const docs = [...db.documents].sort(
     (a, b) => +new Date(b.createdAt) - +new Date(a.createdAt)
   );
-  const clientName = (id: string) => db.clients.find((c) => c.id === id)?.name ?? "—";
 
   return (
     <>
-      <PageHeader title="Dokumenti" subtitle="Učitavanje i automatska analiza ugovora" />
+      <PageHeader title="Dokumenti" subtitle="Učitavanje i analiza pravnih dokumenata" />
       <div className="content">
         <TenantBanner />
         <div style={{ display: "grid", gridTemplateColumns: "1fr 330px", gap: 18, alignItems: "start" }}>
@@ -24,53 +23,45 @@ export default function DocumentsPage() {
               <h3>Svi dokumenti</h3>
               <span className="muted">{docs.length}</span>
             </div>
-            <table className="table">
-              <thead>
-                <tr>
-                  <th>Dokument</th>
-                  <th>Vrsta</th>
-                  <th>Nalazi</th>
-                  <th className="right">Datum</th>
-                </tr>
-              </thead>
-              <tbody>
-                {docs.map((d) => {
-                  const fc = db.findings.filter((f) => f.documentId === d.id);
-                  const hi = fc.filter((f) => f.severity === "visoka").length;
-                  return (
+            {docs.length === 0 ? (
+              <div className="empty">Još nema dokumenata. Učitajte prvi dokument desno →</div>
+            ) : (
+              <table className="table">
+                <thead>
+                  <tr>
+                    <th>Dokument</th>
+                    <th>Vrsta</th>
+                    <th>Status</th>
+                    <th className="right">Datum</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {docs.map((d) => (
                     <tr key={d.id} className="row-link">
                       <td>
                         <Link href={`/dokumenti/${d.id}`} className="t-title">
                           {d.title}
                         </Link>
-                        <div className="t-sub">{clientName(d.clientId)}</div>
+                        <div className="t-sub">{d.filename}</div>
                       </td>
                       <td className="t-sub">{d.type}</td>
-                      <td>
-                        {fc.length === 0 ? (
-                          <span className="chip">bez nalaza</span>
-                        ) : (
-                          <span className={`badge ${hi ? "visoka" : "neutral"}`}>
-                            {fc.length} {fc.length === 1 ? "nalaz" : "nalaza"}
-                            {hi ? ` · ${hi} visok` : ""}
-                          </span>
-                        )}
-                      </td>
+                      <td><DocStatusBadge status={d.status} /></td>
                       <td className="right mono t-sub">{formatDate(d.createdAt)}</td>
                     </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                  ))}
+                </tbody>
+              </table>
+            )}
           </div>
 
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
             <UploadCard />
             <div className="card card-pad" style={{ fontSize: 12.5, color: "var(--muted)" }}>
-              <b style={{ color: "var(--navy)" }}>Savjet za demo</b>
+              <b style={{ color: "var(--navy)" }}>Kako radi</b>
               <p style={{ margin: "6px 0 0" }}>
-                Učitajte bilo koji ugovor (.txt, .docx ili .pdf) i pratite kako ga sustav klasificira,
-                sažima i pregledava prema standardima ureda — u stvarnom vremenu.
+                Dokument se šalje vašem n8n toku, gdje ga Claude iščitava i izdvaja <b>sve</b> bitne
+                podatke — sažetak, strane, iznose, datume, obveze i rokove — sa navedenim izvorom za
+                svaku stavku.
               </p>
             </div>
           </div>

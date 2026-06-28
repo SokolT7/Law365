@@ -6,11 +6,11 @@ import { getMode } from "@/lib/ai/client";
 
 export const metadata: Metadata = {
   title: "LTBLaw — AI pravni sustav",
-  description: "AI sustav za pregled ugovora i praćenje propisa za odvjetnička društva.",
+  description: "AI sustav za analizu pravnih dokumenata za odvjetnička društva.",
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
-  const db = readDB();
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const db = await readDB();
   const mode = getMode();
 
   return (

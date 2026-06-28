@@ -1,20 +1,20 @@
 import { readDB } from "@/lib/db";
 import { formatDateTime } from "@/lib/format";
 import { PageHeader, TenantBanner } from "@/components/ui";
-import { ISpark, ICheck, IUpload, IX, ISearch } from "@/components/Icons";
+import { ISpark, ICheck, IUpload, IAlert, ISearch } from "@/components/Icons";
 
 export const dynamic = "force-dynamic";
 
 function actionIcon(action: string) {
   if (action.includes("Učitao")) return <IUpload size={15} />;
-  if (action.includes("Odobrio")) return <ICheck size={15} />;
-  if (action.includes("Odbacio")) return <IX size={15} />;
+  if (action.includes("Zaprimljen")) return <ICheck size={15} />;
+  if (action.includes("Greška")) return <IAlert size={15} />;
   if (action.includes("pitanje")) return <ISearch size={15} />;
   return <ISpark size={15} />;
 }
 
-export default function AuditPage() {
-  const db = readDB();
+export default async function AuditPage() {
+  const db = await readDB();
   const events = [...db.audit].sort((a, b) => +new Date(b.ts) - +new Date(a.ts));
 
   return (

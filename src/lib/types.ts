@@ -1,32 +1,26 @@
-export type Severity = "visoka" | "srednja" | "niska";
-export type DocStatus = "analizirano" | "u_obradi";
-export type FindingStatus = "otvoren" | "odobren" | "odbacen";
+export type DocStatus = "u_obradi" | "analizirano" | "greska";
 export type Mode = "demo" | "live";
 
 export interface Firm {
   id: string;
   name: string;
 }
-
 export interface User {
   id: string;
   name: string;
   role: string;
 }
-
 export interface Client {
   id: string;
   name: string;
   sector: string;
 }
-
 export interface Matter {
   id: string;
   clientId: string;
   title: string;
   type: string;
 }
-
 export interface Chunk {
   id: string;
   documentId: string;
@@ -35,44 +29,92 @@ export interface Chunk {
   text: string;
 }
 
-export interface KeyTerm {
-  id: string;
-  documentId: string;
-  label: string;
-  value: string;
-  chunkId?: string;
+/* ---------- Iscrpna ekstrakcija dokumenta (rezultat Claudea preko n8n) ---------- */
+
+/** Izvor pojedine činjenice — članak i/ili doslovni navod. */
+export interface Izvor {
+  clanak?: string;
+  citat?: string;
+}
+export interface StranaItem {
+  naziv: string;
+  uloga?: string;
+  oib?: string;
+  adresa?: string;
+  izvor?: Izvor;
+}
+export interface ClanakItem {
+  naslov: string;
+  sazetak: string;
+  izvor?: Izvor;
+}
+export interface TermItem {
+  naziv: string;
+  vrijednost: string;
+  izvor?: Izvor;
+}
+export interface IznosItem {
+  opis: string;
+  iznos: string;
+  valuta?: string;
+  izvor?: Izvor;
+}
+export interface DatumItem {
+  opis: string;
+  datum?: string;
+  vrsta?: string;
+  izvor?: Izvor;
+}
+export interface ObvezaItem {
+  strana?: string;
+  opis: string;
+  rok?: string;
+  izvor?: Izvor;
+}
+export interface PravoItem {
+  strana?: string;
+  opis: string;
+  izvor?: Izvor;
+}
+export interface ReferencaItem {
+  propis: string;
+  izvor?: Izvor;
+}
+export interface NapomenaItem {
+  opis: string;
+  izvor?: Izvor;
 }
 
-export interface Obligation {
-  id: string;
-  documentId: string;
-  text: string;
-  dueDate?: string;
-  chunkId?: string;
-}
-
-export interface Finding {
-  id: string;
-  documentId: string;
-  ruleId: string;
-  title: string;
-  detail: string;
-  severity: Severity;
-  status: FindingStatus;
-  chunkId?: string;
+export interface ExtractionResult {
+  vrsta: string;
+  sazetak: string;
+  strane: StranaItem[];
+  odredbePoClancima: ClanakItem[];
+  kljucniUvjeti: TermItem[];
+  iznosi: IznosItem[];
+  datumiIRokovi: DatumItem[];
+  obveze: ObvezaItem[];
+  prava: PravoItem[];
+  mjerodavnoPravo?: { pravo: string; izvor?: Izvor };
+  nadleznost?: { opis: string; izvor?: Izvor };
+  prestanak?: { opis: string; otkazniRok?: string; izvor?: Izvor };
+  reference: ReferencaItem[];
+  napomene: NapomenaItem[];
 }
 
 export interface DocumentRec {
   id: string;
+  jobId: string;
   title: string;
   filename: string;
-  type: string;
+  type: string; // vrsta (popunjava se iz rezultata kad stigne)
   clientId: string;
   matterId: string;
   status: DocStatus;
   createdAt: string;
-  summary: string;
   mode: Mode;
+  result?: ExtractionResult;
+  error?: string;
 }
 
 export interface AuditEvent {
@@ -90,23 +132,29 @@ export interface DB {
   matters: Matter[];
   documents: DocumentRec[];
   chunks: Chunk[];
-  keyTerms: KeyTerm[];
-  obligations: Obligation[];
-  findings: Finding[];
   audit: AuditEvent[];
 }
 
-/** Result of analysing a single contract (ids/documentId assigned by the pipeline). */
-export interface AnalysisResult {
-  type: string;
-  summary: string;
-  keyTerms: { label: string; value: string; chunkId?: string }[];
-  obligations: { text: string; dueDate?: string; chunkId?: string }[];
-  findings: {
-    ruleId: string;
-    title: string;
-    detail: string;
-    severity: Severity;
-    chunkId?: string;
-  }[];
+/* ---------- Ugovor između nadzorne ploče i n8n-a ---------- */
+
+export interface ExtractionRequest {
+  v: 1;
+  jobId: string;
+  documentId: string;
+  language: "hr";
+  filename: string;
+  text: string;
+  callbackUrl: string;
+  meta: { firm: string; uploadedBy: string };
+}
+
+export interface ExtractionCallback {
+  v: 1;
+  jobId: string;
+  documentId: string;
+  status: "ok" | "error";
+  model?: string;
+  result?: ExtractionResult;
+  usage?: unknown;
+  error?: string | null;
 }

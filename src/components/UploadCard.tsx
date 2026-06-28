@@ -4,12 +4,7 @@ import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { IUpload } from "@/components/Icons";
 
-const STEPS = [
-  "Čitanje datoteke",
-  "Podjela na klauzule",
-  "Klasifikacija i izvlačenje podataka",
-  "Pregled prema standardima ureda",
-];
+const STEPS = ["Čitanje datoteke", "Indeksiranje teksta", "Slanje na analizu (n8n + Claude)"];
 
 export default function UploadCard() {
   const router = useRouter();
@@ -23,11 +18,11 @@ export default function UploadCard() {
     setError(null);
     setBusy(true);
     setStep(0);
-    const timer = setInterval(() => setStep((s) => Math.min(s + 1, STEPS.length - 1)), 650);
+    const timer = setInterval(() => setStep((s) => Math.min(s + 1, STEPS.length - 1)), 500);
     try {
       const fd = new FormData();
       fd.append("file", file);
-      const res = await fetch("/api/upload", { method: "POST", body: fd });
+      const res = await fetch("/api/documents", { method: "POST", body: fd });
       const data = await res.json();
       clearInterval(timer);
       if (!res.ok) {
@@ -35,7 +30,6 @@ export default function UploadCard() {
         setBusy(false);
         return;
       }
-      setStep(STEPS.length - 1);
       router.push(`/dokumenti/${data.id}`);
     } catch {
       clearInterval(timer);
@@ -65,7 +59,7 @@ export default function UploadCard() {
           style={{ cursor: "pointer" }}
         >
           <IUpload size={26} color="var(--gold)" />
-          <p>Učitajte ugovor</p>
+          <p>Učitajte dokument</p>
           <small>Povucite datoteku ovdje ili kliknite za odabir · .pdf, .docx, .txt</small>
           <input
             ref={inputRef}
@@ -80,7 +74,7 @@ export default function UploadCard() {
         </div>
       ) : (
         <div className="drop" style={{ cursor: "default" }}>
-          <p>Analiza u tijeku…</p>
+          <p>Slanje na analizu…</p>
           <div className="progress">
             <span style={{ width: `${((step + 1) / STEPS.length) * 100}%` }} />
           </div>

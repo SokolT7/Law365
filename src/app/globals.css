@@ -208,3 +208,20 @@ h1, h2, h3, h4 { margin: 0; color: var(--navy); }
 .flex { display: flex; align-items: center; gap: 10px; }
 .between { justify-content: space-between; }
 .wrap { flex-wrap: wrap; }
+
+/* ---------- Document result ---------- */
+.res-item { padding: 11px 0; border-bottom: 1px solid var(--line); }
+.res-item:last-child { border-bottom: none; }
+.res-item:first-child { padding-top: 0; }
+.res-sub { color: #4a5568; font-size: 12.5px; margin-top: 3px; line-height: 1.5; }
+.res-label { color: var(--muted); font-size: 12.5px; font-weight: 600; }
+.src { margin-top: 6px; }
+.src > summary { cursor: pointer; font-size: 11px; font-weight: 700; color: var(--gold); list-style: none; display: inline-flex; align-items: center; gap: 4px; }
+.src > summary::-webkit-details-marker { display: none; }
+.src > summary::before { content: "›"; font-size: 13px; transition: transform .15s; display: inline-block; }
+.src[open] > summary::before { transform: rotate(90deg); }
+.src-quote { margin-top: 6px; background: #f7f9fd; border-left: 3px solid var(--gold); border-radius: 6px; padding: 8px 11px; font-size: 12px; color: #41506b; font-style: italic; }
+
+/* ---------- Spinner ---------- */
+.spinner { width: 34px; height: 34px; border-radius: 50%; border: 3px solid var(--line); border-top-color: var(--gold); margin: 0 auto; animation: spin .8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
