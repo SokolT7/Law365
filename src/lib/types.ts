@@ -133,6 +133,10 @@ export interface AuditEvent {
   target: string;
 }
 
+export interface Settings {
+  sources: Record<string, boolean>;
+}
+
 export interface DB {
   firm: Firm;
   user: User;
@@ -141,6 +145,7 @@ export interface DB {
   documents: DocumentRec[];
   chunks: Chunk[];
   audit: AuditEvent[];
+  settings?: Settings;
 }
 
 /* ---------- Ugovor između nadzorne ploče i n8n-a ---------- */

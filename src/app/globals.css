@@ -284,3 +284,32 @@ h1, h2, h3, h4 { margin: 0; color: var(--navy); }
 .tab-dot.mid { background: var(--mid-fg); }
 .tab-dot.hi { background: var(--hi-fg); }
 .tab.active .tab-dot.lo { background: #6ddc9f; }
+
+/* ---------- Toggle switch ---------- */
+.switch { position: relative; width: 42px; height: 24px; border-radius: 999px; border: none; background: #d4dbe8; cursor: pointer; transition: background 0.15s; flex: none; padding: 0; }
+.switch.on { background: var(--navy); }
+.switch .knob { position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2); transition: left 0.15s; }
+.switch.on .knob { left: 21px; }
+.switch:disabled { opacity: 0.7; cursor: default; }
+
+/* ---------- Izvori prava ---------- */
+.izvori-intro { background: linear-gradient(90deg, #f3f7ff, #fbf7ec); border: 1px solid var(--line); border-radius: 14px; padding: 18px 22px; margin-bottom: 18px; }
+.ii-count { font-size: 14px; color: var(--muted); }
+.ii-count b { font-size: 26px; color: var(--navy); font-weight: 800; }
+.ii-text { margin: 8px 0 0; font-size: 13px; color: #44506a; line-height: 1.6; max-width: 760px; }
+.src-row { display: flex; align-items: center; gap: 14px; padding: 14px 20px; border-bottom: 1px solid var(--line); }
+.src-row:last-child { border-bottom: none; }
+.src-main { flex: 1; min-width: 0; }
+.src-name-row { display: flex; align-items: center; gap: 9px; }
+.src-name { font-weight: 600; color: var(--navy); font-size: 13.5px; }
+.src-desc { color: var(--muted); font-size: 12.5px; margin-top: 2px; }
+.src-tag { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; padding: 2px 7px; border-radius: 5px; white-space: nowrap; }
+.src-tag.connected { background: var(--lo-bg); color: var(--lo-fg); }
+.src-tag.available { background: var(--chip); color: #51607a; }
+
+/* ---------- Sources chip row (Q&A) ---------- */
+.src-chips { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+.src-chips .lab { font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); font-weight: 700; }
+.src-chips .schip { display: inline-flex; align-items: center; gap: 6px; background: var(--card); border: 1px solid var(--line); border-radius: 999px; padding: 4px 11px; font-size: 12px; font-weight: 600; color: var(--navy); }
+.src-chips .schip .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--lo-fg); }
+.src-chips .manage { font-size: 12px; font-weight: 600; color: var(--gold); }

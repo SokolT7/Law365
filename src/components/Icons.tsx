@@ -72,3 +72,6 @@ export const IBook = ({ size, ...p }: P) => (
 export const IFlag = ({ size, ...p }: P) => (
   <svg {...base(size)} {...p}><path d="M5 21V4" /><path d="M5 4.5h11l-1.6 3.5L16 11.5H5" /></svg>
 );
+export const IDatabase = ({ size, ...p }: P) => (
+  <svg {...base(size)} {...p}><ellipse cx="12" cy="5.5" rx="7.5" ry="3" /><path d="M4.5 5.5v6c0 1.7 3.4 3 7.5 3s7.5-1.3 7.5-3v-6" /><path d="M4.5 11.5v6c0 1.7 3.4 3 7.5 3s7.5-1.3 7.5-3v-6" /></svg>
+);

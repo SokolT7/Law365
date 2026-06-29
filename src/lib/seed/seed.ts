@@ -1,6 +1,7 @@
 import { randomUUID } from "crypto";
 import { SEED_CONTRACTS } from "@/lib/seed/contracts";
 import { chunkContract } from "@/lib/ingest/chunk";
+import { defaultSources } from "@/lib/sources";
 import type { Chunk, DB, ExtractionResult } from "@/lib/types";
 
 /** Iscrpna ekstrakcija za primjer (IT okvirni ugovor) — pripremljena unaprijed,
@@ -121,5 +122,6 @@ export function buildSeedDB(): DB {
         target: sc.title,
       },
     ],
+    settings: { sources: defaultSources() },
   };
 }

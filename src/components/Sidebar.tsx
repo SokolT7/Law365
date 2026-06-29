@@ -8,6 +8,7 @@ import {
   IShield,
   IChat,
   IClock,
+  IDatabase,
 } from "@/components/Icons";
 import type { Mode } from "@/lib/types";
 
@@ -16,6 +17,7 @@ const LINKS = [
   { href: "/dokumenti", label: "Dokumenti", Icon: IDocs },
   { href: "/provjera", label: "Provjera ugovora", Icon: IShield },
   { href: "/pitanja", label: "Pitanja i odgovori", Icon: IChat },
+  { href: "/izvori", label: "Izvori prava", Icon: IDatabase },
   { href: "/zapisnik", label: "Zapisnik aktivnosti", Icon: IClock },
 ];
 
