@@ -9,7 +9,7 @@ function exampleResult(): ExtractionResult {
   return {
     vrsta: "Okvirni ugovor o pružanju IT usluga",
     sazetak:
-      "Okvirni ugovor između društava TechNova d.o.o. (Izvršitelj) i Jadran Logistika d.o.o. (Naručitelj) o razvoju i održavanju informacijskih sustava prema pojedinačnim narudžbenicama. Procijenjena godišnja vrijednost iznosi 120.000,00 EUR uz rok plaćanja od 90 dana. Ugovor je sklopljen na godinu dana s automatskim produljenjem, predviđa razinu usluge (dostupnost 99%, otklon kritičnih smetnji u 8 sati), prijenos vlasništva nad kodom na Naručitelja po uplati te primjenu prava Republike Hrvatske uz nadležnost Trgovačkog suda u Zagrebu.",
+      "Okvirni ugovor o razvoju i održavanju IT sustava između TechNova d.o.o. (Izvršitelj) i Jadran Logistika d.o.o. (Naručitelj), procijenjene vrijednosti 120.000,00 EUR godišnje uz rok plaćanja od 90 dana. Sklopljen je na godinu dana s automatskim produljenjem. Primjenjuje se hrvatsko pravo, a za sporove je nadležan Trgovački sud u Zagrebu.",
     strane: [
       { naziv: "TechNova d.o.o.", uloga: "Izvršitelj", oib: "12345678901", adresa: "Radnička cesta 80, Zagreb", izvor: { clanak: "Uvodne odredbe", citat: "TechNova d.o.o., Radnička cesta 80, Zagreb, OIB: 12345678901 (dalje: Izvršitelj)" } },
       { naziv: "Jadran Logistika d.o.o.", uloga: "Naručitelj", oib: "98765432109", adresa: "Slavonska avenija 11, Zagreb", izvor: { clanak: "Uvodne odredbe", citat: "Jadran Logistika d.o.o., Slavonska avenija 11, Zagreb, OIB: 98765432109 (dalje: Naručitelj)" } },

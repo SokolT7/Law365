@@ -54,3 +54,21 @@ export const ISpark = ({ size, ...p }: P) => (
 export const ILock = ({ size, ...p }: P) => (
   <svg {...base(size)} {...p}><rect x="5" y="11" width="14" height="9" rx="2" /><path d="M8 11V8a4 4 0 0 1 8 0v3" /></svg>
 );
+export const IUsers = ({ size, ...p }: P) => (
+  <svg {...base(size)} {...p}><circle cx="9" cy="8" r="3.2" /><path d="M3.5 20a5.5 5.5 0 0 1 11 0" /><path d="M16 5.2a3.2 3.2 0 0 1 0 6" /><path d="M17.5 14.6A5.5 5.5 0 0 1 20.5 20" /></svg>
+);
+export const ICoins = ({ size, ...p }: P) => (
+  <svg {...base(size)} {...p}><circle cx="12" cy="12" r="9" /><path d="M15 8.6a4 4 0 1 0 0 6.8" /><path d="M8 11h5M8 13.2h5" /></svg>
+);
+export const ICalendar = ({ size, ...p }: P) => (
+  <svg {...base(size)} {...p}><rect x="3" y="4.5" width="18" height="16" rx="2" /><path d="M3 9.5h18M8 3v3M16 3v3" /></svg>
+);
+export const IList = ({ size, ...p }: P) => (
+  <svg {...base(size)} {...p}><path d="M8 6h12M8 12h12M8 18h12" /><circle cx="3.6" cy="6" r="1.1" /><circle cx="3.6" cy="12" r="1.1" /><circle cx="3.6" cy="18" r="1.1" /></svg>
+);
+export const IBook = ({ size, ...p }: P) => (
+  <svg {...base(size)} {...p}><path d="M5 4.5A1.5 1.5 0 0 1 6.5 3H19v15H6.5A1.5 1.5 0 0 0 5 19.5z" /><path d="M5 19.5A1.5 1.5 0 0 1 6.5 18H19v3H6.5A1.5 1.5 0 0 1 5 19.5z" /></svg>
+);
+export const IFlag = ({ size, ...p }: P) => (
+  <svg {...base(size)} {...p}><path d="M5 21V4" /><path d="M5 4.5h11l-1.6 3.5L16 11.5H5" /></svg>
+);
