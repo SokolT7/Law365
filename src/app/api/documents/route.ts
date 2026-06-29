@@ -3,8 +3,9 @@ import { randomUUID } from "crypto";
 import { readDB, writeDB, addAudit } from "@/lib/db";
 import { parseFile, isSupported } from "@/lib/ingest/parse";
 import { chunkContract } from "@/lib/ingest/chunk";
-import { fireExtraction, getBaseUrl, n8nConfig } from "@/lib/n8n";
-import type { Chunk, DocumentRec } from "@/lib/types";
+import { fireExtraction, getBaseUrl } from "@/lib/n8n";
+import { MODE_LABEL } from "@/lib/docs";
+import type { Analysis, AnalysisMode, Chunk, DocumentRec } from "@/lib/types";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -17,6 +18,9 @@ function titleFromName(name: string): string {
 export async function POST(req: Request) {
   const form = await req.formData();
   const file = form.get("file");
+  const modeRaw = String(form.get("mode") || "sazetak");
+  const mode: AnalysisMode = modeRaw === "detaljna" ? "detaljna" : "sazetak";
+
   if (!(file instanceof File)) {
     return NextResponse.json({ error: "Datoteka nije priložena." }, { status: 400 });
   }
@@ -45,13 +49,14 @@ export async function POST(req: Request) {
   const docId = randomUUID();
   const jobId = randomUUID();
   const title = titleFromName(file.name);
+  const now = new Date().toISOString();
 
   const clientId = randomUUID();
   db.clients.push({ id: clientId, name: "Ručno učitani dokument", sector: "—" });
   const matterId = randomUUID();
   db.matters.push({ id: matterId, clientId, title: `Ručno učitavanje — ${title}`, type: "Dokument" });
 
-  // indeksiranje teksta (za pitanja i odgovore)
+  // indeksiranje teksta (za pitanja i odgovore + ponovnu obradu)
   const chunks: Chunk[] = chunkContract(text).map((c, i) => ({
     id: randomUUID(),
     documentId: docId,
@@ -61,29 +66,36 @@ export async function POST(req: Request) {
   }));
   db.chunks.push(...chunks);
 
+  const analysis: Analysis = { mode, status: "u_obradi", jobId, createdAt: now };
   const doc: DocumentRec = {
     id: docId,
-    jobId,
     title,
     filename: file.name,
     type: "Dokument",
     clientId,
     matterId,
-    status: "u_obradi",
-    createdAt: new Date().toISOString(),
-    mode: n8nConfig().webhookUrl ? "live" : "demo",
+    createdAt: now,
+    analyses: [analysis],
   };
   db.documents.push(doc);
-  addAudit(db, "Učitao dokument na analizu", title);
+  addAudit(db, `Učitao dokument na obradu (${MODE_LABEL[mode]})`, title);
 
-  // pošalji n8n-u na obradu (asinkrono — rezultat stiže na callback)
   try {
-    await fireExtraction(doc, text, getBaseUrl(req), db.firm.name, db.user.name);
+    await fireExtraction({
+      documentId: docId,
+      jobId,
+      mode,
+      filename: file.name,
+      text,
+      baseUrl: getBaseUrl(req),
+      firmName: db.firm.name,
+      userName: db.user.name,
+    });
   } catch (e) {
-    doc.status = "greska";
-    doc.error = (e as Error).message;
+    analysis.status = "greska";
+    analysis.error = (e as Error).message;
   }
 
   await writeDB(db);
-  return NextResponse.json({ id: docId, status: doc.status });
+  return NextResponse.json({ id: docId, mode, status: analysis.status });
 }

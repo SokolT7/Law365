@@ -1,10 +1,18 @@
 import Link from "next/link";
 import { readDB } from "@/lib/db";
 import { formatDate } from "@/lib/format";
-import { PageHeader, TenantBanner, DocStatusBadge } from "@/components/ui";
+import { PageHeader, TenantBanner } from "@/components/ui";
 import UploadCard from "@/components/UploadCard";
+import { MODE_LABEL } from "@/lib/docs";
+import type { DocStatus } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
+
+const STATUS_CLASS: Record<DocStatus, string> = {
+  analizirano: "niska",
+  u_obradi: "srednja",
+  greska: "visoka",
+};
 
 export default async function DocumentsPage() {
   const db = await readDB();
@@ -31,7 +39,7 @@ export default async function DocumentsPage() {
                   <tr>
                     <th>Dokument</th>
                     <th>Vrsta</th>
-                    <th>Status</th>
+                    <th>Obrade</th>
                     <th className="right">Datum</th>
                   </tr>
                 </thead>
@@ -45,7 +53,15 @@ export default async function DocumentsPage() {
                         <div className="t-sub">{d.filename}</div>
                       </td>
                       <td className="t-sub">{d.type}</td>
-                      <td><DocStatusBadge status={d.status} /></td>
+                      <td>
+                        <div className="flex" style={{ gap: 6, flexWrap: "wrap" }}>
+                          {d.analyses.map((a) => (
+                            <span key={a.mode} className={`badge ${STATUS_CLASS[a.status]}`} style={{ fontSize: 10.5 }}>
+                              {MODE_LABEL[a.mode]}
+                            </span>
+                          ))}
+                        </div>
+                      </td>
                       <td className="right mono t-sub">{formatDate(d.createdAt)}</td>
                     </tr>
                   ))}
@@ -57,11 +73,10 @@ export default async function DocumentsPage() {
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
             <UploadCard />
             <div className="card card-pad" style={{ fontSize: 12.5, color: "var(--muted)" }}>
-              <b style={{ color: "var(--navy)" }}>Kako radi</b>
+              <b style={{ color: "var(--navy)" }}>Sažetak vs. Detaljna</b>
               <p style={{ margin: "6px 0 0" }}>
-                Dokument se šalje vašem n8n toku, gdje ga Claude iščitava i izdvaja <b>sve</b> bitne
-                podatke — sažetak, strane, iznose, datume, obveze i rokove — sa navedenim izvorom za
-                svaku stavku.
+                Odaberite <b>Sažetak</b> za kratki pregled glavnih točaka ili <b>Detaljnu analizu</b> za
+                iscrpan prikaz svih podataka. Kasnije, na dokumentu, možete izraditi i drugu vrstu.
               </p>
             </div>
           </div>

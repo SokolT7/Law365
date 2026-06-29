@@ -3,16 +3,22 @@ import { readDB } from "@/lib/db";
 import { PageHeader } from "@/components/ui";
 import DocumentResult from "@/components/DocumentResult";
 import Poller from "@/components/Poller";
+import ModeTabs from "@/components/ModeTabs";
+import { analysisOf } from "@/lib/docs";
 import { IAlert } from "@/components/Icons";
+import type { AnalysisMode } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
 export default async function DocumentDetail({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ prikaz?: string }>;
 }) {
   const { id } = await params;
+  const { prikaz } = await searchParams;
   const db = await readDB();
   const doc = db.documents.find((d) => d.id === id);
 
@@ -30,6 +36,17 @@ export default async function DocumentDetail({
   }
 
   const client = db.clients.find((c) => c.id === doc.clientId);
+  const present = doc.analyses.map((a) => a.mode);
+
+  let active: AnalysisMode | undefined;
+  if ((prikaz === "sazetak" || prikaz === "detaljna") && present.includes(prikaz)) {
+    active = prikaz;
+  } else {
+    active = [...doc.analyses].sort(
+      (a, b) => +new Date(b.createdAt) - +new Date(a.createdAt)
+    )[0]?.mode;
+  }
+  const a = active ? analysisOf(doc, active) : undefined;
 
   return (
     <>
@@ -37,24 +54,28 @@ export default async function DocumentDetail({
         <Link href="/dokumenti" className="btn btn-sm">← Dokumenti</Link>
       </PageHeader>
       <div className="content">
-        {doc.status === "u_obradi" && <Poller documentId={doc.id} />}
+        <ModeTabs doc={doc} active={active ?? "sazetak"} />
 
-        {doc.status === "greska" && (
+        {!a && <div className="empty">Ova vrsta obrade još nije izrađena.</div>}
+
+        {a?.status === "u_obradi" && <Poller documentId={doc.id} mode={a.mode} />}
+
+        {a?.status === "greska" && (
           <div className="card card-pad" style={{ textAlign: "center", padding: "40px 24px" }}>
             <IAlert size={26} color="var(--hi-fg)" />
             <p style={{ fontWeight: 700, color: "var(--navy)", margin: "12px 0 4px" }}>
-              Analiza nije uspjela
+              Obrada nije uspjela
             </p>
             <p className="muted" style={{ fontSize: 13 }}>
-              {doc.error || "Došlo je do pogreške."} Provjerite n8n tok i pokušajte ponovno učitati dokument.
+              {a.error || "Došlo je do pogreške."} Pokušajte ponovno učitati dokument.
             </p>
             <div style={{ marginTop: 16 }}>
-              <Link href="/dokumenti" className="btn btn-primary btn-sm">Ponovno učitaj</Link>
+              <Link href="/dokumenti" className="btn btn-primary btn-sm">Učitaj novi dokument</Link>
             </div>
           </div>
         )}
 
-        {doc.status === "analizirano" && doc.result && <DocumentResult result={doc.result} />}
+        {a?.status === "analizirano" && a.result && <DocumentResult result={a.result} />}
       </div>
     </>
   );

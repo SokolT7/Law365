@@ -3,6 +3,7 @@ import { readDB } from "@/lib/db";
 import { formatDate } from "@/lib/format";
 import { PageHeader, TenantBanner, StatusChart, DocStatusBadge } from "@/components/ui";
 import ResetButton from "@/components/ResetButton";
+import { overallStatus, primaryResult } from "@/lib/docs";
 import { IClock, IDocs, ISpark, IShield } from "@/components/Icons";
 
 export const dynamic = "force-dynamic";
@@ -11,17 +12,20 @@ export default async function DashboardPage() {
   const db = await readDB();
   const docs = db.documents;
   const counts = {
-    u_obradi: docs.filter((d) => d.status === "u_obradi").length,
-    analizirano: docs.filter((d) => d.status === "analizirano").length,
-    greska: docs.filter((d) => d.status === "greska").length,
+    u_obradi: docs.filter((d) => overallStatus(d) === "u_obradi").length,
+    analizirano: docs.filter((d) => overallStatus(d) === "analizirano").length,
+    greska: docs.filter((d) => overallStatus(d) === "greska").length,
   };
 
   const deadlines = docs
-    .flatMap((d) =>
-      (d.result?.datumiIRokovi ?? [])
-        .filter((x) => x.datum)
-        .map((x) => ({ docId: d.id, docTitle: d.title, opis: x.opis, datum: x.datum! }))
-    )
+    .flatMap((d) => {
+      const r = primaryResult(d);
+      return r
+        ? r.datumiIRokovi
+            .filter((x) => x.datum)
+            .map((x) => ({ docId: d.id, docTitle: d.title, opis: x.opis, datum: x.datum! }))
+        : [];
+    })
     .sort((a, b) => +new Date(a.datum) - +new Date(b.datum));
 
   const recent = [...docs]
@@ -96,7 +100,7 @@ export default async function DashboardPage() {
                     <Link href={`/dokumenti/${d.id}`} className="t-title">{d.title}</Link>
                   </td>
                   <td className="t-sub">{d.type}</td>
-                  <td><DocStatusBadge status={d.status} /></td>
+                  <td><DocStatusBadge status={overallStatus(d)} /></td>
                   <td className="right mono t-sub">{formatDate(d.createdAt)}</td>
                 </tr>
               ))}

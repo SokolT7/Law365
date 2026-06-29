@@ -5,7 +5,7 @@ import { Redis } from "@upstash/redis";
 import type { AuditEvent, DB } from "@/lib/types";
 import { buildSeedDB } from "@/lib/seed/seed";
 
-const KEY = "ltblaw:db:v2";
+const KEY = "ltblaw:db:v3";
 const DATA_DIR = path.join(process.cwd(), "data");
 const DB_FILE = path.join(DATA_DIR, "db.json");
 

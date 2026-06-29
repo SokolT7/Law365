@@ -1,5 +1,7 @@
 export type DocStatus = "u_obradi" | "analizirano" | "greska";
 export type Mode = "demo" | "live";
+/** Vrsta obrade dokumenta. */
+export type AnalysisMode = "sazetak" | "detaljna";
 
 export interface Firm {
   id: string;
@@ -102,19 +104,25 @@ export interface ExtractionResult {
   napomene: NapomenaItem[];
 }
 
+/** Jedna obrada (Sažetak ili Detaljna) jednog dokumenta. */
+export interface Analysis {
+  mode: AnalysisMode;
+  status: DocStatus;
+  jobId: string;
+  createdAt: string;
+  result?: ExtractionResult;
+  error?: string;
+}
+
 export interface DocumentRec {
   id: string;
-  jobId: string;
   title: string;
   filename: string;
   type: string; // vrsta (popunjava se iz rezultata kad stigne)
   clientId: string;
   matterId: string;
-  status: DocStatus;
   createdAt: string;
-  mode: Mode;
-  result?: ExtractionResult;
-  error?: string;
+  analyses: Analysis[]; // 0–2 obrade (po jedna za svaku vrstu)
 }
 
 export interface AuditEvent {

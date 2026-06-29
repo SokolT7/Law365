@@ -85,6 +85,11 @@ export function buildSeedDB(): DB {
   }));
 
   const result = exampleResult();
+  const sazetakResult: ExtractionResult = {
+    ...result,
+    odredbePoClancima: result.odredbePoClancima.slice(0, 3),
+    napomene: result.napomene.slice(0, 2),
+  };
 
   return {
     firm,
@@ -94,16 +99,16 @@ export function buildSeedDB(): DB {
     documents: [
       {
         id: docId,
-        jobId: randomUUID(),
         title: sc.title,
         filename: sc.filename,
         type: result.vrsta,
         clientId,
         matterId,
-        status: "analizirano",
         createdAt,
-        mode: "demo",
-        result,
+        analyses: [
+          { mode: "detaljna", status: "analizirano", jobId: randomUUID(), createdAt, result },
+          { mode: "sazetak", status: "analizirano", jobId: randomUUID(), createdAt, result: sazetakResult },
+        ],
       },
     ],
     chunks,

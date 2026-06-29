@@ -263,3 +263,24 @@ h1, h2, h3, h4 { margin: 0; color: var(--navy); }
 .def:last-child { border-bottom: none; }
 .def-l { font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); font-weight: 700; }
 .def-v { font-size: 13.5px; color: #33405c; margin-top: 4px; line-height: 1.5; }
+
+/* ---------- Segmented control ---------- */
+.seg-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); font-weight: 700; margin-bottom: 7px; }
+.segmented { display: flex; background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 3px; gap: 3px; }
+.segmented .seg { flex: 1; border: none; background: transparent; padding: 8px 10px; border-radius: 8px; font-size: 12.5px; font-weight: 600; color: var(--muted); cursor: pointer; transition: all .12s; }
+.segmented .seg:hover { color: var(--navy); }
+.segmented .seg.active { background: var(--card); color: var(--navy); box-shadow: 0 1px 2px rgba(16, 32, 60, 0.08); }
+
+/* ---------- Mode tabs ---------- */
+.tabs { display: flex; gap: 8px; margin-bottom: 18px; flex-wrap: wrap; }
+.tab { display: inline-flex; align-items: center; gap: 8px; padding: 9px 15px; border-radius: 10px; border: 1px solid var(--line); background: var(--card); font-size: 13px; font-weight: 600; color: var(--muted); cursor: pointer; transition: all 0.12s; }
+.tab:hover { border-color: #c7d0e0; color: var(--navy); }
+.tab.active { background: var(--navy); border-color: var(--navy); color: #fff; }
+.tab-add { border-style: dashed; color: var(--gold); }
+.tab-add:hover { border-color: var(--gold); background: #fcf8ee; color: #a2761f; }
+.tab-add:disabled { opacity: 0.6; cursor: not-allowed; }
+.tab-dot { width: 7px; height: 7px; border-radius: 50%; flex: none; }
+.tab-dot.lo { background: var(--lo-fg); }
+.tab-dot.mid { background: var(--mid-fg); }
+.tab-dot.hi { background: var(--hi-fg); }
+.tab.active .tab-dot.lo { background: #6ddc9f; }
