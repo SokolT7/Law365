@@ -12,9 +12,11 @@ export default async function DashboardPage() {
   const db = await readDB();
   const docs = db.documents;
   const counts = {
-    u_obradi: docs.filter((d) => overallStatus(d) === "u_obradi").length,
-    analizirano: docs.filter((d) => overallStatus(d) === "analizirano").length,
-    greska: docs.filter((d) => overallStatus(d) === "greska").length,
+    analizirano: docs.filter((d) => d.analyses.some((a) => a.status === "analizirano")).length,
+    u_obradi: docs.filter(
+      (d) => d.analyses.some((a) => a.status === "u_obradi") && !d.analyses.some((a) => a.status === "analizirano")
+    ).length,
+    greska: docs.filter((d) => d.analyses.length > 0 && d.analyses.every((a) => a.status === "greska")).length,
   };
 
   const deadlines = docs
@@ -100,7 +102,13 @@ export default async function DashboardPage() {
                     <Link href={`/dokumenti/${d.id}`} className="t-title">{d.title}</Link>
                   </td>
                   <td className="t-sub">{d.type}</td>
-                  <td><DocStatusBadge status={overallStatus(d)} /></td>
+                  <td>
+                    {d.analyses.length === 0 ? (
+                      <span className="badge neutral">Učitano</span>
+                    ) : (
+                      <DocStatusBadge status={overallStatus(d)} />
+                    )}
+                  </td>
                   <td className="right mono t-sub">{formatDate(d.createdAt)}</td>
                 </tr>
               ))}

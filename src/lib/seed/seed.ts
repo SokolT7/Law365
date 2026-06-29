@@ -102,6 +102,7 @@ export function buildSeedDB(): DB {
         id: docId,
         title: sc.title,
         filename: sc.filename,
+        files: [sc.filename],
         type: result.vrsta,
         clientId,
         matterId,
@@ -109,6 +110,14 @@ export function buildSeedDB(): DB {
         analyses: [
           { mode: "detaljna", status: "analizirano", jobId: randomUUID(), createdAt, result },
           { mode: "sazetak", status: "analizirano", jobId: randomUUID(), createdAt, result: sazetakResult },
+        ],
+        conversation: [
+          {
+            id: randomUUID(),
+            role: "assistant",
+            text: `Učitan je dokument „${sc.title}”. Pitajte me bilo što o njemu, ili gore otvorite Sažetak ili Detaljnu analizu.`,
+            ts: createdAt,
+          },
         ],
       },
     ],

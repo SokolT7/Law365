@@ -75,3 +75,15 @@ export const IFlag = ({ size, ...p }: P) => (
 export const IDatabase = ({ size, ...p }: P) => (
   <svg {...base(size)} {...p}><ellipse cx="12" cy="5.5" rx="7.5" ry="3" /><path d="M4.5 5.5v6c0 1.7 3.4 3 7.5 3s7.5-1.3 7.5-3v-6" /><path d="M4.5 11.5v6c0 1.7 3.4 3 7.5 3s7.5-1.3 7.5-3v-6" /></svg>
 );
+export const IPaperclip = ({ size, ...p }: P) => (
+  <svg {...base(size)} {...p}><path d="M21 11.5l-8.5 8.5a5 5 0 0 1-7-7L13.5 4.9a3.3 3.3 0 0 1 4.7 4.7l-9 9a1.6 1.6 0 0 1-2.3-2.3l8-8" /></svg>
+);
+export const IImage = ({ size, ...p }: P) => (
+  <svg {...base(size)} {...p}><rect x="3" y="4.5" width="18" height="15" rx="2.5" /><circle cx="8.5" cy="9.5" r="1.6" /><path d="M5 17l4.5-4.5 3 3L16 12l3 3.5" /></svg>
+);
+export const ISend = ({ size, ...p }: P) => (
+  <svg {...base(size)} {...p}><path d="M4 11.5 20 4l-6.5 16-2.7-6.5z" /><path d="M11 13l9-9" /></svg>
+);
+export const ISummary = ({ size, ...p }: P) => (
+  <svg {...base(size)} {...p}><path d="M5 5h14M5 9.5h14M5 14h9M5 18.5h6" /></svg>
+);

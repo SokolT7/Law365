@@ -114,15 +114,31 @@ export interface Analysis {
   error?: string;
 }
 
+export interface ChatCitation {
+  documentTitle: string;
+  heading: string;
+  snippet: string;
+}
+export interface ChatMessage {
+  id: string;
+  role: "user" | "assistant";
+  text: string;
+  ts: string;
+  citations?: ChatCitation[];
+  hasImage?: boolean;
+}
+
 export interface DocumentRec {
   id: string;
   title: string;
   filename: string;
+  files?: string[]; // svi učitani dokumenti u ovom radnom prostoru
   type: string; // vrsta (popunjava se iz rezultata kad stigne)
   clientId: string;
   matterId: string;
   createdAt: string;
   analyses: Analysis[]; // 0–2 obrade (po jedna za svaku vrstu)
+  conversation?: ChatMessage[];
 }
 
 export interface AuditEvent {

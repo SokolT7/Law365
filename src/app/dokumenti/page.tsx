@@ -55,6 +55,9 @@ export default async function DocumentsPage() {
                       <td className="t-sub">{d.type}</td>
                       <td>
                         <div className="flex" style={{ gap: 6, flexWrap: "wrap" }}>
+                          {d.analyses.length === 0 && (
+                            <span className="badge neutral" style={{ fontSize: 10.5 }}>Učitano</span>
+                          )}
                           {d.analyses.map((a) => (
                             <span key={a.mode} className={`badge ${STATUS_CLASS[a.status]}`} style={{ fontSize: 10.5 }}>
                               {MODE_LABEL[a.mode]}
@@ -73,10 +76,10 @@ export default async function DocumentsPage() {
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
             <UploadCard />
             <div className="card card-pad" style={{ fontSize: 12.5, color: "var(--muted)" }}>
-              <b style={{ color: "var(--navy)" }}>Sažetak vs. Detaljna</b>
+              <b style={{ color: "var(--navy)" }}>Kako radi</b>
               <p style={{ margin: "6px 0 0" }}>
-                Odaberite <b>Sažetak</b> za kratki pregled glavnih točaka ili <b>Detaljnu analizu</b> za
-                iscrpan prikaz svih podataka. Kasnije, na dokumentu, možete izraditi i drugu vrstu.
+                Učitajte dokument(e) i otvara se radni prostor: <b>razgovarajte</b> s dokumentom u chatu
+                (uz priloge), ili jednim klikom pokrenite <b>Sažetak</b> ili <b>Detaljnu analizu</b>.
               </p>
             </div>
           </div>

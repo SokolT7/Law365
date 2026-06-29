@@ -172,7 +172,7 @@ h1, h2, h3, h4 { margin: 0; color: var(--navy); }
 .empty { text-align: center; color: var(--muted); padding: 40px 20px; font-size: 13.5px; }
 
 /* ---------- Chat ---------- */
-.chat-wrap { display: flex; flex-direction: column; height: calc(100vh - 220px); min-height: 420px; }
+.chat-wrap { display: flex; flex-direction: column; height: calc(100vh - 300px); min-height: 380px; }
 .chat-stream { flex: 1; overflow-y: auto; padding: 8px 4px 14px; display: flex; flex-direction: column; gap: 16px; }
 .bubble { max-width: 720px; padding: 12px 15px; border-radius: 12px; font-size: 13.5px; line-height: 1.55; }
 .bubble.user { align-self: flex-end; background: var(--navy); color: #fff; border-bottom-right-radius: 4px; }
@@ -313,3 +313,25 @@ h1, h2, h3, h4 { margin: 0; color: var(--navy); }
 .src-chips .schip { display: inline-flex; align-items: center; gap: 6px; background: var(--card); border: 1px solid var(--line); border-radius: 999px; padding: 4px 11px; font-size: 12px; font-weight: 600; color: var(--navy); }
 .src-chips .schip .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--lo-fg); }
 .src-chips .manage { font-size: 12px; font-weight: 600; color: var(--gold); }
+
+/* ---------- Workspace: analysis action cards ---------- */
+.actions-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+.action-card { display: flex; align-items: center; gap: 12px; padding: 13px 16px; background: var(--card); border: 1px solid var(--line); border-radius: 12px; box-shadow: var(--shadow); cursor: pointer; text-align: left; color: var(--ink); transition: all 0.12s; font: inherit; }
+.action-card:hover { border-color: #c7d0e0; transform: translateY(-1px); }
+.action-create { border-style: dashed; }
+.ac-icon { width: 34px; height: 34px; border-radius: 9px; background: var(--chip); color: var(--navy-2); display: grid; place-items: center; flex: none; }
+.ac-plus { width: 34px; height: 34px; border-radius: 9px; background: var(--mid-bg); color: var(--gold); display: grid; place-items: center; flex: none; font-size: 18px; font-weight: 700; }
+.ac-main { display: flex; flex-direction: column; min-width: 0; }
+.ac-title { font-weight: 700; color: var(--navy); font-size: 13.5px; }
+.ac-sub { font-size: 12px; color: var(--muted); display: inline-flex; align-items: center; gap: 6px; margin-top: 1px; }
+@media (max-width: 720px) { .actions-row { grid-template-columns: 1fr; } }
+
+/* ---------- Chat composer (workspace) ---------- */
+.composer .comp-icon { flex: none; width: 38px; height: 40px; border: 1px solid var(--line); background: #fff; border-radius: 10px; color: var(--muted); cursor: pointer; display: grid; place-items: center; }
+.composer .comp-icon:hover { color: var(--navy); border-color: #c7d0e0; }
+.composer .comp-send { flex: none; padding: 0 15px; }
+.attach-preview { position: relative; display: inline-block; margin-bottom: 8px; }
+.attach-preview img { height: 56px; border-radius: 8px; border: 1px solid var(--line); display: block; }
+.attach-preview .x { position: absolute; top: -7px; right: -7px; width: 20px; height: 20px; border-radius: 50%; background: var(--navy); color: #fff; border: none; cursor: pointer; font-size: 14px; line-height: 1; }
+.bubble-img { font-size: 12px; opacity: 0.85; margin-bottom: 6px; }
+.bubble.user .bubble-img { color: #cdd7e6; }

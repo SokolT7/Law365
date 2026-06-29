@@ -28,7 +28,7 @@ export default function ModeTabs({
         return (
           <Link
             key={m}
-            href={`/dokumenti/${doc.id}?prikaz=${m}`}
+            href={`/dokumenti/${doc.id}?analiza=${m}`}
             className={`tab${m === active ? " active" : ""}`}
           >
             <span className={`tab-dot ${DOT[a.status]}`} />
