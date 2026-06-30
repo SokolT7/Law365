@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { ChatMessage } from "@/lib/types";
 import { IPaperclip, IImage, ISend } from "@/components/Icons";
+import SourceChips from "@/components/SourceChips";
 
 const SUGGESTIONS = [
   "O čemu je ovaj dokument?",
@@ -20,9 +21,11 @@ function uid() {
 export default function DocumentChat({
   documentId,
   initialMessages,
+  sources,
 }: {
   documentId: string;
   initialMessages: ChatMessage[];
+  sources: Record<string, boolean>;
 }) {
   const router = useRouter();
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
@@ -127,7 +130,8 @@ export default function DocumentChat({
   }
 
   return (
-    <div className="card card-pad chat-wrap">
+    <div className="chat-glass-wrap">
+    <div className="chat-wrap glass">
       <div className="chat-stream" ref={streamRef}>
         {messages.map((m) => (
           <div key={m.id} className={`bubble ${m.role}`}>
@@ -150,6 +154,7 @@ export default function DocumentChat({
 
       <div>
         {error && <div className="flash err" style={{ marginBottom: 8 }}>{error}</div>}
+        <SourceChips enabled={sources} />
         {messages.length <= 1 && (
           <div className="suggest">
             {SUGGESTIONS.map((s) => (
@@ -187,6 +192,7 @@ export default function DocumentChat({
         <input ref={imgInput} type="file" accept="image/*" style={{ display: "none" }}
           onChange={(e) => { attachImage(e.target.files); e.target.value = ""; }} />
       </div>
+    </div>
     </div>
   );
 }

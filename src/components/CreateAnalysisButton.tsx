@@ -19,6 +19,8 @@ export default function CreateAnalysisButton({
   const [busy, setBusy] = useState(false);
 
   async function create() {
+    // otvori prozor sinkrono u kliku (izbjegava blokadu skočnih prozora)
+    const win = variant === "action" ? window.open("", "_blank") : null;
     setBusy(true);
     try {
       await fetch(`/api/documents/${documentId}`, {
@@ -26,9 +28,16 @@ export default function CreateAnalysisButton({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ mode }),
       });
-      router.push(`/dokumenti/${documentId}?analiza=${mode}`);
-      router.refresh();
+      const url = `/dokumenti/${documentId}?analiza=${mode}`;
+      if (win) {
+        win.location.href = url;
+        router.refresh();
+      } else {
+        router.push(url);
+        router.refresh();
+      }
     } catch {
+      if (win) win.close();
       setBusy(false);
     }
   }

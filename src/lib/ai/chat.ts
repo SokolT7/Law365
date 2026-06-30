@@ -12,11 +12,31 @@ function snippet(text: string, max = 260): string {
   return s.length > max ? s.slice(0, max - 1) + "…" : s;
 }
 
-const SYSTEM =
-  "Ti si LTBLaw — hrvatski pravni asistent. Razgovaraš s odvjetnikom o njegovim dokumentima. " +
-  "Odgovaraj na hrvatskom, jasno i poslovno, oslanjajući se na priložene izvore iz korisnikovih dokumenata. " +
-  "Kada se pozivaš na dokument, navedi članak ili odredbu. Ako odgovor nije u dokumentima, reci to i odgovori na temelju općeg pravnog znanja uz napomenu. " +
-  "Ne dajеš obvezujući pravni savjet — odgovor treba provjeriti odvjetnik.";
+/** Stroga, ne-pretpostavljajuća uloga: odgovara isključivo iz priloženih izvora. */
+const SYSTEM = [
+  "Ti si LTBLaw — hrvatski pravni asistent koji pomaže odvjetniku oko njegovih dokumenata.",
+  "STROGA PRAVILA (obvezno):",
+  "1. Odgovaraj ISKLJUČIVO na temelju priloženih izvora (ulomaka iz korisnikovih dokumenata). Ne koristi vanjsko znanje, ne pretpostavljaj i ne izmišljaj.",
+  "2. Ako odgovor nije sadržan u priloženim izvorima, jasno reci: „To nije navedeno u dostupnim dokumentima.” i ne nagađaj.",
+  "3. Nikada ne donosi odluke umjesto korisnika i ne daj obvezujući pravni savjet — iznosi samo ono što piše u dokumentima i predloži da provjeri odvjetnik.",
+  "4. Za svaku tvrdnju navedi izvor (naziv dokumenta i članak/odredbu).",
+  "5. Odgovaraj na hrvatskom jeziku, kratko i jasno.",
+].join("\n");
+
+/** Omata (možda loše postavljeno) korisničko pitanje u jasne upute za model. */
+function scaffold(question: string, context: string): string {
+  return [
+    `Korisnik je postavio pitanje (može biti nejasno, nepotpuno ili kolokvijalno): "${question}"`,
+    "",
+    "Postupi ovako:",
+    "1. Razumij stvarnu namjeru korisnika i u sebi preoblikuj pitanje u jasno pravno pitanje.",
+    "2. Odgovori ISKLJUČIVO na temelju dolje navedenih izvora. Ako u izvorima nema odgovora, reci da nije navedeno u dokumentima i ne nagađaj.",
+    "3. Navedi izvor (članak/odredbu) za svaku tvrdnju.",
+    "",
+    "Izvori iz dokumenata:",
+    context || "(nema relevantnih izvora za ovo pitanje)",
+  ].join("\n");
+}
 
 export async function chatAnswer(opts: {
   question: string;
@@ -24,12 +44,14 @@ export async function chatAnswer(opts: {
   chunks: Chunk[];
   docs: DocumentRec[];
   mode: Mode;
+  useDocuments: boolean;
   image?: { mediaType: string; data: string };
 }): Promise<ChatResult> {
-  const { question, history, chunks, docs, mode, image } = opts;
+  const { question, history, chunks, docs, mode, useDocuments, image } = opts;
   const titleOf = (id: string) => docs.find((d) => d.id === id)?.title ?? "Dokument";
 
-  const scored = searchChunks(question, chunks, 5);
+  // dohvat samo ako je izvor "Vaši dokumenti" uključen
+  const scored = useDocuments ? searchChunks(question, chunks, 5) : [];
   const citations: ChatCitation[] = scored.map((s) => ({
     documentTitle: titleOf(s.chunk.documentId),
     heading: s.chunk.heading,
@@ -43,8 +65,6 @@ export async function chatAnswer(opts: {
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const client: any = await getClient();
-
-      // povijest razgovora (mora počinjati korisnikovom porukom)
       const hist = history.slice(-8);
       while (hist.length && hist[0].role === "assistant") hist.shift();
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -58,10 +78,7 @@ export async function chatAnswer(opts: {
           source: { type: "base64", media_type: image.mediaType, data: image.data },
         });
       }
-      userContent.push({
-        type: "text",
-        text: `Pitanje: ${question}\n\nDostupni izvori iz dokumenata:\n${context || "(nema pronađenih relevantnih ulomaka)"}`,
-      });
+      userContent.push({ type: "text", text: scaffold(question, context) });
       messages.push({ role: "user", content: userContent });
 
       const resp = await client.messages.create({
@@ -77,14 +94,20 @@ export async function chatAnswer(opts: {
     }
   }
 
-  // DEMO fallback (leksički)
+  // DEMO fallback (leksički, jednako strog)
+  if (!useDocuments) {
+    return {
+      answer:
+        "Nijedan izvor nije uključen. Uključite „Vaši dokumenti” (ili drugi izvor) da bih mogao odgovoriti.",
+      citations: [],
+    };
+  }
   if (image && citations.length === 0) {
     return { answer: "Za analizu slika potreban je aktivan AI način rada (ANTHROPIC_API_KEY).", citations: [] };
   }
   if (citations.length === 0) {
     return {
-      answer:
-        "U dostupnim dokumentima nisam pronašao odgovor na to pitanje. Pokušajte preformulirati pitanje ili učitati relevantan dokument.",
+      answer: "To nije navedeno u dostupnim dokumentima. Pokušajte preformulirati pitanje ili učitati relevantan dokument.",
       citations: [],
     };
   }

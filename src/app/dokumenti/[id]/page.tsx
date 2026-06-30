@@ -7,6 +7,7 @@ import AnalysisActions from "@/components/AnalysisActions";
 import ModeTabs from "@/components/ModeTabs";
 import Poller from "@/components/Poller";
 import { analysisOf } from "@/lib/docs";
+import { defaultSources } from "@/lib/sources";
 import { IAlert } from "@/components/Icons";
 
 export const dynamic = "force-dynamic";
@@ -75,7 +76,11 @@ export default async function DocumentWorkspace({
       </PageHeader>
       <div className="content">
         <AnalysisActions doc={doc} />
-        <DocumentChat documentId={doc.id} initialMessages={doc.conversation ?? []} />
+        <DocumentChat
+          documentId={doc.id}
+          initialMessages={doc.conversation ?? []}
+          sources={db.settings?.sources ?? defaultSources()}
+        />
       </div>
     </>
   );

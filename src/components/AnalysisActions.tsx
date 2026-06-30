@@ -21,12 +21,18 @@ export default function AnalysisActions({ doc }: { doc: DocumentRec }) {
         const dot = a.status === "analizirano" ? "lo" : a.status === "u_obradi" ? "mid" : "hi";
         const sub =
           a.status === "analizirano"
-            ? "Prikaži rezultat"
+            ? "Otvori u zasebnom prozoru ↗"
             : a.status === "u_obradi"
             ? "U obradi…"
             : "Nije uspjelo — pokušaj ponovno";
         return (
-          <Link key={m} href={`/dokumenti/${doc.id}?analiza=${m}`} className="action-card">
+          <Link
+            key={m}
+            href={`/dokumenti/${doc.id}?analiza=${m}`}
+            className="action-card"
+            target="_blank"
+            rel="noopener"
+          >
             <span className="ac-icon"><Icon size={17} /></span>
             <span className="ac-main">
               <span className="ac-title">{MODE_LABEL[m]}</span>
