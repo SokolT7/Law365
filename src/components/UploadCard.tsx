@@ -6,13 +6,18 @@ import { IUpload } from "@/components/Icons";
 
 const STEPS = ["Čitanje datoteka", "Indeksiranje teksta", "Priprema radnog prostora"];
 
-export default function UploadCard() {
+export default function UploadCard({
+  clients = [],
+}: {
+  clients?: { id: string; name: string }[];
+}) {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
   const [over, setOver] = useState(false);
   const [busy, setBusy] = useState(false);
   const [step, setStep] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [clientId, setClientId] = useState("");
 
   async function handleFiles(files: FileList | File[]) {
     const list = Array.from(files);
@@ -24,6 +29,7 @@ export default function UploadCard() {
     try {
       const fd = new FormData();
       list.forEach((f) => fd.append("file", f));
+      if (clientId) fd.append("clientId", clientId);
       const res = await fetch("/api/documents", { method: "POST", body: fd });
       const data = await res.json();
       clearInterval(timer);
@@ -43,6 +49,21 @@ export default function UploadCard() {
   return (
     <div className="card card-pad">
       {error && <div className="flash err">{error}</div>}
+      {clients.length > 0 && !busy && (
+        <div style={{ marginBottom: 12 }}>
+          <div className="seg-label">Klijent</div>
+          <select
+            className="select"
+            value={clientId}
+            onChange={(e) => setClientId(e.target.value)}
+          >
+            <option value="">Bez klijenta (interno)</option>
+            {clients.map((c) => (
+              <option key={c.id} value={c.id}>{c.name}</option>
+            ))}
+          </select>
+        </div>
+      )}
       {!busy ? (
         <div
           className={`drop${over ? " over" : ""}`}

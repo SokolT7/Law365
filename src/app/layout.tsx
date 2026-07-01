@@ -1,8 +1,19 @@
 import type { Metadata } from "next";
+import { Fraunces, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import Sidebar from "@/components/Sidebar";
 import { readDB } from "@/lib/db";
 import { getMode } from "@/lib/ai/client";
+
+const display = Fraunces({
+  subsets: ["latin", "latin-ext"],
+  variable: "--font-display",
+  axes: ["opsz"],
+});
+const body = Plus_Jakarta_Sans({
+  subsets: ["latin", "latin-ext"],
+  variable: "--font-body",
+});
 
 export const metadata: Metadata = {
   title: "LTBLaw — AI pravni sustav",
@@ -14,7 +25,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const mode = getMode();
 
   return (
-    <html lang="hr">
+    <html lang="hr" className={`${display.variable} ${body.variable}`}>
       <body>
         <div className="app">
           <Sidebar

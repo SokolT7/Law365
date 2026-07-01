@@ -25,15 +25,22 @@
 * { box-sizing: border-box; }
 html, body { padding: 0; margin: 0; }
 body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-family: var(--font-body), -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   background: var(--bg);
   color: var(--ink);
   font-size: 14px;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 a { color: inherit; text-decoration: none; }
-h1, h2, h3, h4 { margin: 0; color: var(--navy); }
+h1, h2, h3, h4 {
+  margin: 0;
+  color: var(--navy);
+  font-family: var(--font-display), Georgia, serif;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+}
 
 /* ---------- Layout ---------- */
 .app { display: grid; grid-template-columns: 256px 1fr; min-height: 100vh; }
@@ -502,4 +509,191 @@ body {
 
 @media (max-width: 920px) {
   body { background-attachment: scroll; }
+}
+
+/* ============================================================
+   PREMIUM PASS — typography with character, choreographed
+   motion (custom curves, staggered entries, press feedback),
+   film-grain texture, and the new sections (klijenti, propisi,
+   provjera). Layered last; glass stays the primary surface.
+   ============================================================ */
+:root {
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+/* film grain — fixed, non-interactive, breaks digital flatness */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  pointer-events: none;
+  opacity: 0.024;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ---------- Typography with presence ---------- */
+.topbar h1 { font-size: 22px; letter-spacing: -0.02em; }
+.brand-name { font-family: var(--font-display), Georgia, serif; letter-spacing: -0.01em; }
+.stat { display: block; }
+.stat .value {
+  font-family: var(--font-display), Georgia, serif;
+  font-size: 34px;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+}
+.stat .label, .seg-label, .kf-label, .def-l, .table th, .src-chips .lab, .source-chips .sc-lab {
+  letter-spacing: 0.08em;
+}
+.sh-text, .f-detail, .ii-text, .res-sub { text-wrap: pretty; }
+.ii-count b { font-family: var(--font-display), Georgia, serif; font-weight: 600; }
+
+/* ---------- Motion: press feedback + specific transitions ---------- */
+.btn, .tab, .action-card, .source-chip, .schip, .comp-icon, .nav-link, .client-card, .stat, .reg-mini {
+  transition:
+    transform 160ms var(--ease-out),
+    background-color 160ms ease,
+    border-color 160ms ease,
+    color 160ms ease,
+    box-shadow 220ms var(--ease-out);
+}
+.btn:active, .tab:active, .action-card:active, .comp-icon:active,
+.source-chip:active, .switch:active, .client-card:active { transform: scale(0.97); }
+.btn-primary:active, .btn-gold:active { transform: scale(0.97); }
+.card { transition: box-shadow 240ms var(--ease-out), transform 240ms var(--ease-out); }
+.table tr.row-link td { transition: background-color 150ms ease; }
+.switch { transition: background-color 180ms var(--ease-out); }
+.switch .knob { transition: left 180ms var(--ease-drawer); }
+.nav-link:hover { transform: translateX(2px); }
+.nav-link { position: relative; }
+.nav-link.active::before {
+  content: "";
+  position: absolute;
+  left: -16px;
+  top: 8px;
+  bottom: 8px;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: linear-gradient(var(--gold-soft), var(--gold));
+}
+
+/* hover only where a pointer exists */
+@media (hover: hover) and (pointer: fine) {
+  .stat:hover { transform: translateY(-2px); }
+  .client-card:hover, .reg-mini:hover { transform: translateY(-2px); }
+  .row-link:hover .t-title { color: var(--navy-2); }
+}
+
+/* ---------- Staggered page entry ---------- */
+@keyframes rise {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.content > * { animation: rise 480ms var(--ease-out) backwards; }
+.content > *:nth-child(1) { animation-delay: 0ms; }
+.content > *:nth-child(2) { animation-delay: 60ms; }
+.content > *:nth-child(3) { animation-delay: 120ms; }
+.content > *:nth-child(4) { animation-delay: 180ms; }
+.content > *:nth-child(n + 5) { animation-delay: 230ms; }
+.grid > *, .client-grid > * { animation: rise 480ms var(--ease-out) backwards; }
+.grid > *:nth-child(1), .client-grid > *:nth-child(1) { animation-delay: 40ms; }
+.grid > *:nth-child(2), .client-grid > *:nth-child(2) { animation-delay: 90ms; }
+.grid > *:nth-child(3), .client-grid > *:nth-child(3) { animation-delay: 140ms; }
+.grid > *:nth-child(4), .client-grid > *:nth-child(4) { animation-delay: 190ms; }
+.grid > *:nth-child(n + 5), .client-grid > *:nth-child(n + 5) { animation-delay: 240ms; }
+.bubble { animation: rise 320ms var(--ease-out) backwards; }
+
+/* ---------- Focus & perceived speed ---------- */
+:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+.spinner { animation-duration: 0.55s; border-top-color: var(--gold); }
+
+/* ---------- Form controls ---------- */
+.select {
+  width: 100%;
+  padding: 9px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--glass-hi);
+  font: inherit;
+  font-size: 13px;
+  color: var(--ink);
+  outline: none;
+  cursor: pointer;
+  transition: border-color 160ms ease, background-color 160ms ease;
+}
+.select:focus { border-color: var(--navy-2); background: #fff; }
+
+/* ---------- Klijenti ---------- */
+.client-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px;
+}
+.client-card {
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+  padding: 18px 20px;
+  border-radius: 16px;
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  box-shadow: var(--glass-shadow);
+}
+.client-card:hover { background: var(--glass-hi); box-shadow: 0 18px 46px rgba(16, 32, 60, 0.16), inset 0 1px 0 rgba(255, 255, 255, 0.6); }
+.cc-top { display: flex; align-items: center; gap: 12px; }
+.cc-avatar {
+  width: 42px; height: 42px; flex: none;
+  border-radius: 13px;
+  background: linear-gradient(135deg, var(--navy-2), var(--navy));
+  color: var(--gold-soft);
+  font-family: var(--font-display), Georgia, serif;
+  font-weight: 600; font-size: 15px;
+  display: grid; place-items: center;
+  box-shadow: 0 6px 14px rgba(22, 39, 63, 0.28);
+}
+.cc-id { min-width: 0; flex: 1; }
+.cc-name { display: block; font-weight: 700; color: var(--navy); font-size: 14.5px; }
+.cc-sector { display: block; color: var(--muted); font-size: 12px; margin-top: 1px; }
+.cc-alert {
+  display: inline-flex; align-items: center; gap: 5px; flex: none;
+  background: var(--hi-bg); color: var(--hi-fg);
+  font-size: 11px; font-weight: 700;
+  padding: 3px 9px; border-radius: 999px;
+}
+.cc-stats { display: flex; gap: 16px; font-size: 12.5px; color: #41506b; font-weight: 600; }
+.cc-stats span { display: inline-flex; align-items: center; gap: 6px; }
+.cc-stats svg { color: var(--gold); }
+.cc-foot {
+  display: flex; justify-content: space-between; gap: 10px;
+  border-top: 1px solid var(--line);
+  padding-top: 11px;
+  font-size: 11.5px; color: var(--muted);
+}
+
+/* ---------- Praćenje propisa ---------- */
+.reg-item { border-left: 3px solid transparent; }
+.reg-item:has(.badge.visoka) { border-left-color: var(--hi-fg); }
+.reg-item:has(.badge.srednja) { border-left-color: var(--mid-fg); }
+.reg-item.reviewed { opacity: 0.72; border-left-color: transparent; }
+.reg-mini {
+  display: flex; gap: 10px; align-items: flex-start;
+  padding: 4px 6px; margin: -4px -6px;
+  border-radius: 10px;
+}
+.reg-mini:hover { background: rgba(255, 255, 255, 0.5); }
+
+/* ---------- Reduced motion ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .content > *, .grid > *, .client-grid > *, .bubble { animation: none; }
+  .nav-link:hover, .stat:hover, .client-card:hover, .action-card:hover, .reg-mini:hover { transform: none; }
+  * { transition-duration: 0.01ms !important; }
 }

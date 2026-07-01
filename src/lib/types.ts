@@ -16,6 +16,8 @@ export interface Client {
   id: string;
   name: string;
   sector: string;
+  oib?: string;
+  contact?: string;
 }
 export interface Matter {
   id: string;
@@ -153,6 +155,24 @@ export interface Settings {
   sources: Record<string, boolean>;
 }
 
+/* ---------- Praćenje propisa (regulatorne promjene) ---------- */
+
+export type RegSeverity = "visoka" | "srednja" | "niska";
+
+export interface RegUpdate {
+  id: string;
+  date: string; // ISO datum objave
+  source: string; // npr. "Narodne novine 58/2026" ili "EUR-Lex C(2026) 412"
+  sourceId: string; // veže se na katalog izvora (rh-zakoni, eu-propisi, …)
+  title: string;
+  summary: string;
+  areas: string[]; // pravna područja
+  severity: RegSeverity;
+  affectedClientIds: string[];
+  action?: string; // preporučena radnja ureda
+  reviewed?: boolean;
+}
+
 export interface DB {
   firm: Firm;
   user: User;
@@ -162,6 +182,7 @@ export interface DB {
   chunks: Chunk[];
   audit: AuditEvent[];
   settings?: Settings;
+  regUpdates?: RegUpdate[]; // tolerantno čitanje starijih baza
 }
 
 /* ---------- Ugovor između nadzorne ploče i n8n-a ---------- */

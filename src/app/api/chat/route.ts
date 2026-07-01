@@ -26,7 +26,7 @@ export async function POST(req: Request) {
   const docChunks = db.chunks.filter((c) => c.documentId === documentId);
   const history = doc.conversation ?? [];
   // izvori su autoritativni na poslužitelju (klijent ih ne može lažirati)
-  const useDocuments = db.settings?.sources?.["vasi-dokumenti"] !== false;
+  const sources = db.settings?.sources ?? {};
 
   const result = await chatAnswer({
     question: message,
@@ -34,7 +34,7 @@ export async function POST(req: Request) {
     chunks: docChunks,
     docs: db.documents,
     mode: getMode(),
-    useDocuments,
+    sources,
     image,
   });
 

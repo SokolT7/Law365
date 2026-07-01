@@ -9,14 +9,18 @@ import {
   IChat,
   IClock,
   IDatabase,
+  IUsers,
+  IFlag,
 } from "@/components/Icons";
 import type { Mode } from "@/lib/types";
 
 const LINKS = [
   { href: "/", label: "Nadzorna ploča", Icon: IDashboard },
   { href: "/dokumenti", label: "Dokumenti", Icon: IDocs },
+  { href: "/klijenti", label: "Klijenti", Icon: IUsers },
   { href: "/provjera", label: "Provjera ugovora", Icon: IShield },
   { href: "/pitanja", label: "Pitanja i odgovori", Icon: IChat },
+  { href: "/propisi", label: "Praćenje propisa", Icon: IFlag },
   { href: "/izvori", label: "Izvori prava", Icon: IDatabase },
   { href: "/zapisnik", label: "Zapisnik aktivnosti", Icon: IClock },
 ];

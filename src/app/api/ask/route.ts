@@ -13,7 +13,13 @@ export async function POST(req: Request) {
   }
 
   const db = await readDB();
-  const result = await answerQuestion(question, db.chunks, db.documents, getMode());
+  const result = await answerQuestion(
+    question,
+    db.chunks,
+    db.documents,
+    getMode(),
+    db.settings?.sources ?? { "vasi-dokumenti": true }
+  );
 
   addAudit(db, "Postavio pitanje (AI)", question.slice(0, 90));
   await writeDB(db);

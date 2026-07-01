@@ -62,8 +62,19 @@ export async function POST(req: Request) {
   const title =
     names.length === 1 ? titleFromName(names[0]) : `Radni prostor (${names.length} dokumenata)`;
 
-  const clientId = randomUUID();
-  db.clients.push({ id: clientId, name: "Ručno učitani dokument", sector: "—" });
+  // dodjela postojećem klijentu (iz obrasca) ili internom radnom prostoru
+  const requestedClient = form.get("clientId");
+  const existing =
+    typeof requestedClient === "string" && requestedClient
+      ? db.clients.find((c) => c.id === requestedClient)
+      : undefined;
+  let clientId: string;
+  if (existing) {
+    clientId = existing.id;
+  } else {
+    clientId = randomUUID();
+    db.clients.push({ id: clientId, name: "Ručno učitani dokument", sector: "—" });
+  }
   const matterId = randomUUID();
   db.matters.push({ id: matterId, clientId, title: `Radni prostor — ${title}`, type: "Dokument" });
 

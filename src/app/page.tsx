@@ -4,7 +4,7 @@ import { formatDate } from "@/lib/format";
 import { PageHeader, TenantBanner, StatusChart, DocStatusBadge } from "@/components/ui";
 import ResetButton from "@/components/ResetButton";
 import { overallStatus, primaryResult } from "@/lib/docs";
-import { IClock, IDocs, ISpark, IShield } from "@/components/Icons";
+import { IDocs, ISpark, IShield, IUsers, IFlag } from "@/components/Icons";
 
 export const dynamic = "force-dynamic";
 
@@ -34,25 +34,30 @@ export default async function DashboardPage() {
     .sort((a, b) => +new Date(b.createdAt) - +new Date(a.createdAt))
     .slice(0, 6);
 
+  const namedClients = db.clients.filter((c) => c.name !== "Ručno učitani dokument");
+  const regs = [...(db.regUpdates ?? [])].sort((a, b) => +new Date(b.date) - +new Date(a.date));
+  const newRegs = regs.filter((r) => !r.reviewed);
+
   return (
     <>
-      <PageHeader title="Nadzorna ploča" subtitle="Pregled dokumenata, statusa analize i rokova">
+      <PageHeader title="Nadzorna ploča" subtitle="Pregled dokumenata, klijenata, rokova i propisa">
         <ResetButton />
       </PageHeader>
       <div className="content">
         <TenantBanner />
 
         <div className="grid grid-4" style={{ marginBottom: 18 }}>
-          <Stat label="Dokumenti" value={docs.length} foot="ukupno" Icon={IDocs} />
-          <Stat label="U obradi" value={counts.u_obradi} foot="analiza u tijeku" Icon={ISpark} />
-          <Stat label="Analizirano" value={counts.analizirano} foot="spremno za pregled" Icon={IShield} />
-          <Stat label="Rokovi" value={deadlines.length} foot="izdvojeni datumi" Icon={IClock} />
+          <Stat label="Dokumenti" value={docs.length} foot="ukupno" Icon={IDocs} href="/dokumenti" />
+          <Stat label="Klijenti" value={namedClients.length} foot="aktivni klijenti" Icon={IUsers} href="/klijenti" />
+          <Stat label="Analizirano" value={counts.analizirano} foot="spremno za pregled" Icon={IShield} href="/dokumenti" />
+          <Stat label="Nove promjene propisa" value={newRegs.length} foot="čeka pregled" Icon={IFlag} href="/propisi" hi={newRegs.some((r) => r.severity === "visoka")} />
         </div>
 
-        <div className="grid grid-2">
+        <div className="grid grid-3" style={{ alignItems: "start" }}>
           <div className="card">
             <div className="card-head">
               <h3>Dokumenti po statusu</h3>
+              <span className="muted">{counts.u_obradi > 0 ? `${counts.u_obradi} u obradi` : ""}</span>
             </div>
             <div className="card-pad">
               <StatusChart counts={counts} />
@@ -61,21 +66,42 @@ export default async function DashboardPage() {
 
           <div className="card">
             <div className="card-head">
-              <h3>Nadolazeći datumi i rokovi</h3>
+              <h3>Nadolazeći rokovi</h3>
               <span className="muted">{deadlines.length}</span>
             </div>
             <div className="card-pad" style={{ display: "flex", flexDirection: "column", gap: 12 }}>
               {deadlines.length === 0 && <div className="empty">Nema izdvojenih datuma.</div>}
-              {deadlines.slice(0, 5).map((x, i) => (
+              {deadlines.slice(0, 4).map((x, i) => (
                 <div key={i} className="flex between" style={{ alignItems: "flex-start", gap: 12 }}>
                   <div style={{ minWidth: 0 }}>
-                    <Link href={`/dokumenti/${x.docId}`} style={{ fontWeight: 600, color: "var(--navy)" }}>
+                    <Link href={`/dokumenti/${x.docId}`} style={{ fontWeight: 600, color: "var(--navy)", fontSize: 13 }}>
                       {x.docTitle}
                     </Link>
                     <div className="t-sub" style={{ marginTop: 2 }}>{x.opis}</div>
                   </div>
-                  <span className="chip mono">{formatDate(x.datum)}</span>
+                  <span className="chip mono" style={{ flex: "none" }}>{formatDate(x.datum)}</span>
                 </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="card">
+            <div className="card-head">
+              <h3>Promjene propisa</h3>
+              <Link href="/propisi" className="muted">Sve →</Link>
+            </div>
+            <div className="card-pad" style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              {newRegs.length === 0 && <div className="empty">Sve promjene su pregledane.</div>}
+              {newRegs.slice(0, 3).map((r) => (
+                <Link key={r.id} href="/propisi" className="reg-mini">
+                  <span className={`tab-dot ${r.severity === "visoka" ? "hi" : r.severity === "srednja" ? "mid" : "lo"}`} style={{ marginTop: 6 }} />
+                  <span style={{ minWidth: 0 }}>
+                    <span style={{ fontWeight: 600, color: "var(--navy)", fontSize: 13, display: "block" }}>
+                      {r.title}
+                    </span>
+                    <span className="t-sub">{r.source.split("—")[0].trim()} · {formatDate(r.date)}</span>
+                  </span>
+                </Link>
               ))}
             </div>
           </div>
@@ -125,20 +151,32 @@ function Stat({
   value,
   foot,
   Icon,
+  href,
+  hi,
 }: {
   label: string;
   value: number;
   foot: string;
   Icon: (p: { size?: number; color?: string }) => React.ReactElement;
+  href?: string;
+  hi?: boolean;
 }) {
-  return (
-    <div className="stat">
+  const body = (
+    <>
       <div className="flex between">
         <span className="label">{label}</span>
         <Icon size={18} color="var(--muted)" />
       </div>
-      <div className="value">{value}</div>
+      <div className={`value${hi ? " hi" : ""}`}>{value}</div>
       <div className="foot">{foot}</div>
-    </div>
+    </>
   );
+  if (href) {
+    return (
+      <Link href={href} className="stat">
+        {body}
+      </Link>
+    );
+  }
+  return <div className="stat">{body}</div>;
 }

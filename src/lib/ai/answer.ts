@@ -1,5 +1,6 @@
 import type { Chunk, DocumentRec, Mode } from "@/lib/types";
 import { searchChunks, type ScoredChunk } from "@/lib/retrieval/search";
+import { corpusChunks, corpusTitle } from "@/lib/corpus";
 import { getClient, getModel, textOf } from "@/lib/ai/client";
 
 export interface Citation {
@@ -28,7 +29,7 @@ async function answerWithClaude(
   const context = scored
     .map(
       (s, i) =>
-        `[Izvor ${i + 1}] Dokument: „${titleOf(s.chunk.documentId)}” — ${s.chunk.heading}\n${s.chunk.text}`
+        `[Izvor ${i + 1}] ${titleOf(s.chunk.documentId)} — ${s.chunk.heading}\n${s.chunk.text}`
     )
     .join("\n\n");
 
@@ -39,9 +40,10 @@ async function answerWithClaude(
     max_tokens: 700,
     thinking: { type: "adaptive" },
     system:
-      "Ti si hrvatski pravni asistent. Odgovaraj ISKLJUČIVO na temelju priloženih izvora iz dokumenata " +
-      "odvjetničkog društva. Ako odgovor nije u izvorima, reci da podatak nije pronađen. " +
-      "Odgovaraj kratko, na hrvatskom, i u zagradi navedi naziv članka/odredbe na koji se pozivaš. " +
+      "Ti si hrvatski pravni asistent. Odgovaraj ISKLJUČIVO na temelju priloženih izvora (dokumenti " +
+      "odvjetničkog društva i uključeni izvori prava). Ako odgovor nije u izvorima, reci da podatak nije pronađen — " +
+      "ne pretpostavljaj i ne nagađaj. Korisnikovo pitanje može biti nespretno postavljeno: prvo shvati stvarnu namjeru, " +
+      "zatim odgovori kratko, na hrvatskom, i u zagradi navedi propis/dokument i članak na koji se pozivaš. " +
       "Ne daješ pravni savjet — odgovor mora provjeriti odvjetnik.",
     messages: [
       {
@@ -55,7 +57,7 @@ async function answerWithClaude(
 }
 
 /**
- * Pitanja i odgovori utemeljeni na dokumentima (RAG).
+ * Pitanja i odgovori utemeljeni na dokumentima + uključenim izvorima prava (RAG).
  * Uvijek dohvaća izvore leksičkim pretraživanjem i vraća citate.
  * LIVE način koristi Claudea za formulaciju (uz siguran fallback na DEMO odgovor).
  */
@@ -63,10 +65,15 @@ export async function answerQuestion(
   question: string,
   chunks: Chunk[],
   docs: DocumentRec[],
-  mode: Mode
+  mode: Mode,
+  sources: Record<string, boolean> = { "vasi-dokumenti": true }
 ): Promise<Answer> {
-  const titleOf = (id: string) => docs.find((d) => d.id === id)?.title ?? "Dokument";
-  const scored = searchChunks(question, chunks, 4);
+  const titleOf = (id: string) =>
+    corpusTitle(id) ?? docs.find((d) => d.id === id)?.title ?? "Dokument";
+
+  const useDocuments = sources["vasi-dokumenti"] !== false;
+  const pool: Chunk[] = [...(useDocuments ? chunks : []), ...corpusChunks(sources)];
+  const scored = searchChunks(question, pool, 5);
 
   const citations: Citation[] = scored.map((s) => ({
     documentId: s.chunk.documentId,
@@ -79,7 +86,7 @@ export async function answerQuestion(
   if (citations.length === 0) {
     return {
       answer:
-        "U dostupnim dokumentima nisam pronašao odgovor na to pitanje. Pokušajte preformulirati pitanje ili učitati relevantan ugovor.",
+        "U dostupnim izvorima nisam pronašao odgovor na to pitanje. Pokušajte preformulirati pitanje, uključiti dodatne izvore prava ili učitati relevantan ugovor.",
       citations: [],
     };
   }
@@ -94,6 +101,6 @@ export async function answerQuestion(
   }
 
   const top = scored[0];
-  const answer = `Na temelju dokumenta „${titleOf(top.chunk.documentId)}”, u dijelu „${top.chunk.heading}” navodi se: ${snippet(top.chunk.text, 360)}`;
+  const answer = `Prema izvoru „${titleOf(top.chunk.documentId)}”, u dijelu „${top.chunk.heading}” navodi se: ${snippet(top.chunk.text, 360)}`;
   return { answer, citations };
 }
