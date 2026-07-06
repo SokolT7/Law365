@@ -12,6 +12,7 @@ import {
   IUsers,
   IFlag,
 } from "@/components/Icons";
+import Logo from "@/components/Logo";
 import type { Mode } from "@/lib/types";
 
 const LINKS = [
@@ -41,7 +42,9 @@ export default function Sidebar({
   return (
     <aside className="sidebar">
       <div className="brand">
-        <div className="brand-mark">LTB</div>
+        <div className="brand-mark">
+          <Logo size={38} />
+        </div>
         <div>
           <div className="brand-name">LTBLaw</div>
         </div>

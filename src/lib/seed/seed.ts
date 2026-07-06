@@ -77,7 +77,7 @@ const SEED_CONTACTS = [
 export function buildSeedDB(): DB {
   const firm = {
     id: "firm",
-    name: process.env.LTBLAW_FIRM || "Odvjetničko društvo Marić & Jurić",
+    name: process.env.LTBLAW_FIRM || "Odvjetničko društvo Glamuzina & Grošeta",
   };
   const user = { id: "user", name: "Ana Marić", role: "Odvjetnica · partnerica" };
 
