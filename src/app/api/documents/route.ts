@@ -75,8 +75,10 @@ export async function POST(req: Request) {
     clientId = randomUUID();
     db.clients.push({ id: clientId, name: "Ručno učitani dokument", sector: "—" });
   }
+  const kindField = form.get("kind");
+  const kindLabel = kindField === "ugovor" ? "Ugovor" : "Dokument";
   const matterId = randomUUID();
-  db.matters.push({ id: matterId, clientId, title: `Radni prostor — ${title}`, type: "Dokument" });
+  db.matters.push({ id: matterId, clientId, title: `Radni prostor — ${title}`, type: kindLabel });
 
   const greeting: ChatMessage = {
     id: randomUUID(),
@@ -93,7 +95,7 @@ export async function POST(req: Request) {
     title,
     filename: names[0],
     files: names,
-    type: "Dokument",
+    type: kindLabel,
     clientId,
     matterId,
     createdAt: now,

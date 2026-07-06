@@ -1,7 +1,7 @@
-import Link from "next/link";
 import { readDB } from "@/lib/db";
 import { PageHeader, TenantBanner } from "@/components/ui";
 import AskChat from "@/components/AskChat";
+import SourcesDropdown from "@/components/SourcesDropdown";
 import { allSourceItems, defaultSources } from "@/lib/sources";
 
 export const dynamic = "force-dynamic";
@@ -14,9 +14,11 @@ export default async function AskPage() {
   return (
     <>
       <PageHeader
-        title="Pitanja i odgovori"
+        title="Pravna pitanja"
         subtitle="Razgovarajte s dokumentima i izvorima prava — svaki odgovor navodi izvor"
-      />
+      >
+        <SourcesDropdown sources={sources} />
+      </PageHeader>
       <div className="content">
         <TenantBanner />
         <div className="src-chips">
@@ -30,7 +32,9 @@ export default async function AskPage() {
               {s.name.replace(/\s*\(.*\)$/, "")}
             </span>
           ))}
-          <Link href="/izvori" className="manage">Upravljaj izvorima →</Link>
+          {enabled.length > 6 && (
+            <span className="muted" style={{ fontSize: 12 }}>+{enabled.length - 6}</span>
+          )}
         </div>
         <AskChat />
       </div>

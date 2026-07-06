@@ -1,6 +1,9 @@
 import Link from "next/link";
 import { readDB } from "@/lib/db";
 import { PageHeader, TenantBanner } from "@/components/ui";
+import UploadCard from "@/components/UploadCard";
+import SourcesDropdown from "@/components/SourcesDropdown";
+import { defaultSources } from "@/lib/sources";
 import { reviewDocument } from "@/lib/review";
 import { IShield, ICheck, IAlert } from "@/components/Icons";
 
@@ -33,28 +36,40 @@ export default async function ReviewPage({
       <PageHeader
         title="Provjera ugovora"
         subtitle="Trenutačni pregled rizika prema standardima ureda — svaki nalaz navodi odredbu i pravni temelj"
-      />
+      >
+        <SourcesDropdown sources={db.settings?.sources ?? defaultSources()} />
+      </PageHeader>
       <div className="content">
         <TenantBanner />
 
-        <div className="card card-pad" style={{ marginBottom: 18 }}>
-          <div className="seg-label">Odaberite dokument za provjeru</div>
-          <div className="flex wrap" style={{ gap: 8, marginTop: 8 }}>
-            {docs.length === 0 && (
-              <span className="muted" style={{ fontSize: 13 }}>
-                Nema dokumenata — <Link href="/dokumenti" className="t-title">učitajte prvi →</Link>
-              </span>
-            )}
-            {docs.map((d) => (
-              <Link
-                key={d.id}
-                href={`/provjera?dok=${d.id}`}
-                className={`tab${selected?.id === d.id ? " active" : ""}`}
-              >
-                {d.title}
-              </Link>
-            ))}
+        <div className="split-330" style={{ marginBottom: 18 }}>
+          <div className="card card-pad">
+            <div className="seg-label">Odaberite dokument za provjeru</div>
+            <div className="flex wrap" style={{ gap: 8, marginTop: 8 }}>
+              {docs.length === 0 && (
+                <span className="muted" style={{ fontSize: 13 }}>
+                  Nema dokumenata — učitajte prvi ugovor desno →
+                </span>
+              )}
+              {docs.map((d) => (
+                <Link
+                  key={d.id}
+                  href={`/provjera?dok=${d.id}`}
+                  className={`tab${selected?.id === d.id ? " active" : ""}`}
+                >
+                  {d.title}
+                </Link>
+              ))}
+            </div>
           </div>
+          <UploadCard
+            heading="Nova provjera — učitaj ugovor"
+            kind="ugovor"
+            redirect="provjera"
+            clients={db.clients
+              .filter((c) => c.name !== "Ručno učitani dokument")
+              .map((c) => ({ id: c.id, name: c.name }))}
+          />
         </div>
 
         {!selected && docs.length > 0 && (

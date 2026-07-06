@@ -6,10 +6,23 @@ import { IUpload } from "@/components/Icons";
 
 const STEPS = ["Čitanje datoteka", "Indeksiranje teksta", "Priprema radnog prostora"];
 
+export type UploadKind = "dokument" | "ugovor";
+
 export default function UploadCard({
   clients = [],
+  fixedClientId,
+  kind = "choice",
+  redirect = "workspace",
+  heading,
 }: {
   clients?: { id: string; name: string }[];
+  /** unaprijed odabran klijent (npr. na stranici klijenta) */
+  fixedClientId?: string;
+  /** "choice" = korisnik bira Dokument/Ugovor; "ugovor" = zaključano na ugovor */
+  kind?: "choice" | "ugovor";
+  /** kamo nakon učitavanja: radni prostor ili ravno u provjeru */
+  redirect?: "workspace" | "provjera";
+  heading?: string;
 }) {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -17,7 +30,8 @@ export default function UploadCard({
   const [busy, setBusy] = useState(false);
   const [step, setStep] = useState(0);
   const [error, setError] = useState<string | null>(null);
-  const [clientId, setClientId] = useState("");
+  const [clientId, setClientId] = useState(fixedClientId ?? "");
+  const [docKind, setDocKind] = useState<UploadKind>(kind === "ugovor" ? "ugovor" : "dokument");
 
   async function handleFiles(files: FileList | File[]) {
     const list = Array.from(files);
@@ -29,7 +43,9 @@ export default function UploadCard({
     try {
       const fd = new FormData();
       list.forEach((f) => fd.append("file", f));
-      if (clientId) fd.append("clientId", clientId);
+      const cid = fixedClientId ?? clientId;
+      if (cid) fd.append("clientId", cid);
+      fd.append("kind", docKind);
       const res = await fetch("/api/documents", { method: "POST", body: fd });
       const data = await res.json();
       clearInterval(timer);
@@ -38,7 +54,8 @@ export default function UploadCard({
         setBusy(false);
         return;
       }
-      router.push(`/dokumenti/${data.id}`);
+      router.push(redirect === "provjera" ? `/provjera?dok=${data.id}` : `/dokumenti/${data.id}`);
+      router.refresh();
     } catch {
       clearInterval(timer);
       setError("Došlo je do pogreške pri učitavanju.");
@@ -48,8 +65,30 @@ export default function UploadCard({
 
   return (
     <div className="card card-pad">
+      {heading && (
+        <div className="seg-label" style={{ marginBottom: 10 }}>{heading}</div>
+      )}
       {error && <div className="flash err">{error}</div>}
-      {clients.length > 0 && !busy && (
+
+      {!busy && kind === "choice" && (
+        <div style={{ marginBottom: 12 }}>
+          <div className="seg-label">Vrsta</div>
+          <div className="segmented">
+            {(["dokument", "ugovor"] as UploadKind[]).map((k) => (
+              <button
+                key={k}
+                type="button"
+                className={`seg${docKind === k ? " active" : ""}`}
+                onClick={() => setDocKind(k)}
+              >
+                {k === "dokument" ? "Dokument" : "Ugovor"}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {!busy && !fixedClientId && clients.length > 0 && (
         <div style={{ marginBottom: 12 }}>
           <div className="seg-label">Klijent</div>
           <select
@@ -64,6 +103,7 @@ export default function UploadCard({
           </select>
         </div>
       )}
+
       {!busy ? (
         <div
           className={`drop${over ? " over" : ""}`}
@@ -81,7 +121,7 @@ export default function UploadCard({
           onClick={() => inputRef.current?.click()}
         >
           <IUpload size={26} color="var(--gold)" />
-          <p>Učitajte dokument(e)</p>
+          <p>{kind === "ugovor" || docKind === "ugovor" ? "Učitajte ugovor(e)" : "Učitajte dokument(e)"}</p>
           <small>Povucite jednu ili više datoteka · .pdf, .docx, .txt</small>
           <input
             ref={inputRef}
@@ -96,7 +136,7 @@ export default function UploadCard({
         </div>
       ) : (
         <div className="drop" style={{ cursor: "default" }}>
-          <p>Priprema radnog prostora…</p>
+          <p>{redirect === "provjera" ? "Priprema provjere…" : "Priprema radnog prostora…"}</p>
           <div className="progress">
             <span style={{ width: `${((step + 1) / STEPS.length) * 100}%` }} />
           </div>

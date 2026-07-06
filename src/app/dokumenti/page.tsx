@@ -3,6 +3,8 @@ import { readDB } from "@/lib/db";
 import { formatDate } from "@/lib/format";
 import { PageHeader, TenantBanner } from "@/components/ui";
 import UploadCard from "@/components/UploadCard";
+import SourcesDropdown from "@/components/SourcesDropdown";
+import { defaultSources } from "@/lib/sources";
 import { MODE_LABEL } from "@/lib/docs";
 import type { DocStatus } from "@/lib/types";
 
@@ -33,7 +35,9 @@ export default async function DocumentsPage({
 
   return (
     <>
-      <PageHeader title="Dokumenti" subtitle="Učitavanje i analiza pravnih dokumenata" />
+      <PageHeader title="Dokumenti" subtitle="Učitavanje i analiza pravnih dokumenata">
+        <SourcesDropdown sources={db.settings?.sources ?? defaultSources()} />
+      </PageHeader>
       <div className="content">
         <TenantBanner />
 
@@ -55,7 +59,7 @@ export default async function DocumentsPage({
           </div>
         )}
 
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 330px", gap: 18, alignItems: "start" }}>
+        <div className="split-330">
           <div className="card">
             <div className="card-head">
               <h3>{activeClient ? `Dokumenti — ${activeClient.name}` : "Svi dokumenti"}</h3>
@@ -118,7 +122,7 @@ export default async function DocumentsPage({
             )}
           </div>
 
-          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+          <div className="side-stack">
             <UploadCard clients={namedClients.map((c) => ({ id: c.id, name: c.name }))} />
             <div className="card card-pad" style={{ fontSize: 12.5, color: "var(--muted)" }}>
               <b style={{ color: "var(--navy)" }}>Kako radi</b>

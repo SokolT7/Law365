@@ -2,6 +2,7 @@ import Link from "next/link";
 import { readDB } from "@/lib/db";
 import { formatDate } from "@/lib/format";
 import { PageHeader, DocStatusBadge } from "@/components/ui";
+import UploadCard from "@/components/UploadCard";
 import { overallStatus } from "@/lib/docs";
 import { MODE_LABEL } from "@/lib/docs";
 import { IFlag } from "@/components/Icons";
@@ -99,6 +100,7 @@ export default async function ClientDetailPage({
           </div>
         </div>
 
+        <div className="split-330">
         <div className="card">
           <div className="card-head">
             <h3>Dokumenti klijenta</h3>
@@ -106,7 +108,7 @@ export default async function ClientDetailPage({
           </div>
           {docs.length === 0 ? (
             <div className="empty">
-              Nema dokumenata. <Link href="/dokumenti" className="t-title">Učitajte prvi →</Link>
+              Nema dokumenata — učitajte prvi dokument ili ugovor desno →
             </div>
           ) : (
             <table className="table">
@@ -144,6 +146,18 @@ export default async function ClientDetailPage({
               </tbody>
             </table>
           )}
+        </div>
+
+        <div className="side-stack">
+          <UploadCard heading={`Učitaj za: ${client.name}`} fixedClientId={client.id} />
+          <div className="card card-pad" style={{ fontSize: 12.5, color: "var(--muted)" }}>
+            <b style={{ color: "var(--navy)" }}>Dokument ili ugovor?</b>
+            <p style={{ margin: "6px 0 0" }}>
+              Odaberite vrstu prije učitavanja. <b>Ugovori</b> se odmah mogu provjeriti prema
+              standardima ureda na stranici <Link href="/provjera" className="t-title">Provjera ugovora</Link>.
+            </p>
+          </div>
+        </div>
         </div>
       </div>
     </>
