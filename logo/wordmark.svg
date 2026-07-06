@@ -13,7 +13,7 @@
   <rect x="1" y="1" width="46" height="46" rx="14" fill="url(#lg-badge)"></rect>
   <rect x="1.5" y="1.5" width="45" height="45" rx="13.5" fill="none" stroke="#eed494" stroke-opacity="0.35"></rect>
   <path d="M15 2h18c7 0 13 6 13 13v3C38 12 30.5 9.5 24 9.5S10 12 2 18v-3C2 8 8 2 15 2Z" fill="#ffffff" opacity="0.09"></path>
-  <g fill="none" stroke="url(#lg-gold)" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
+  <g fill="none" stroke="url(#lg-gold)" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" transform="translate(25.5 24) scale(0.75) translate(-25.5 -24)">
     <path d="M7 15 V33 H13"></path>
     <path d="M17.5 15 H30.5"></path>
     <path d="M24 15 V33"></path>

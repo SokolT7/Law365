@@ -35,8 +35,15 @@ export default function Logo({ size = 38 }: { size?: number }) {
         opacity="0.09"
       />
 
-      {/* LTB linijski znak */}
-      <g fill="none" stroke="url(#ltb-gold)" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round">
+      {/* LTB linijski znak — smanjen na 75% radi zračnijeg razmaka u pločici */}
+      <g
+        fill="none"
+        stroke="url(#ltb-gold)"
+        strokeWidth="2.1"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        transform="translate(25.5 24) scale(0.75) translate(-25.5 -24)"
+      >
         {/* L */}
         <path d="M7 15 V33 H13" />
         {/* T — prečka, stup, podnožje */}
