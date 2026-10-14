@@ -12,13 +12,15 @@ const DOT: Record<string, string> = {
 export default function ModeTabs({
   doc,
   active,
+  modes = MODES,
 }: {
   doc: DocumentRec;
   active: AnalysisMode;
+  modes?: AnalysisMode[];
 }) {
   return (
     <div className="tabs">
-      {MODES.map((m) => {
+      {modes.map((m) => {
         const a = analysisOf(doc, m);
         if (!a) {
           return (

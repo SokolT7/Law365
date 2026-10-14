@@ -1,12 +1,14 @@
 # Production Upgrade — Supabase Persistence & Multi-User Auth
 
-> **Status:** Planned. **Do NOT implement in the demo phase.**
-> The demo runs on the current Upstash KV store (single JSON blob, key `ltblaw:db:v3`)
+> **Status:** Production migration pending. Read `REDESIGN_PLAN.md` and `README.md` first: the private-app reconstruction has begun, using a transitional single-host SQLite identity store and isolated firm content. This earlier blueprint is not the schema currently running.
+> The legacy demo used an Upstash KV store (single JSON blob, key `ltblaw:db:v3`)
 > with local-file fallback. This document is the blueprint for the **production phase**,
 > when documents + full conversations must be stored durably, securely, and per-firm.
 >
 > **Driving directive:** security-first — no data leaks, no cross-tenant access, GDPR-aligned.
 > **Auth target (decided 2026-06-30):** full multi-user login from day one.
+
+> **Current architecture corrections:** use one central deployment; LTB provisions firms/users and controls entitlements. No owner self-signup or per-firm deployments. Replace the broad sample write policies below with role- and feature-aware policies; audit records must not be member-editable. Add lifecycle state, invitations, branding, entitlement configuration, platform administrators, regulatory review ownership and job records. Verify provider settings, region options, models and privacy claims against current documentation before implementation.
 
 ---
 

@@ -1,3 +1,7 @@
+import { readJsonObject } from "@/lib/auth";
+import { requireFeature, AccessError } from "@/lib/auth";
+import { isSourceAvailable, allSourceItems } from "@/lib/sources";
+import { apiRoute } from "@/lib/api-access";
 import { NextResponse } from "next/server";
 import { readDB, writeDB, addAudit } from "@/lib/db";
 import { defaultSources, sourceName } from "@/lib/sources";
@@ -5,15 +9,20 @@ import { defaultSources, sourceName } from "@/lib/sources";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-export async function POST(req: Request) {
-  const { id, enabled } = (await req.json()) as { id: string; enabled: boolean };
+async function handlePOST(req: Request) {
+  const session = await requireFeature("source_settings");
+  if (session.user.role !== "firm_admin") throw new AccessError(403,"Postavke mijenja administrator ureda.");
+  const { id, enabled } = (await readJsonObject(req)) as { id: string; enabled: boolean };
+  if (!allSourceItems().some(s => s.id === id) || typeof enabled !== "boolean" || !isSourceAvailable(id)) throw new AccessError(400,"Izvor nije dostupan.");
   if (!id) return NextResponse.json({ error: "Nedostaje id izvora." }, { status: 400 });
 
   const db = await readDB();
   if (!db.settings) db.settings = { sources: defaultSources() };
   db.settings.sources[id] = !!enabled;
-  addAudit(db, enabled ? "Uključio izvor prava" : "Isključio izvor prava", sourceName(id));
-  await writeDB(db);
+  addAudit(db, enabled ? "Uključio izvor prava" : "Isključio izvor prava", sourceName(id), "source_settings");
+  await writeDB(db, "source_settings");
 
   return NextResponse.json({ ok: true, id, enabled: !!enabled });
 }
+
+export const POST = apiRoute("source_settings", handlePOST);

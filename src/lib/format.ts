@@ -1,9 +1,11 @@
 const DATE = new Intl.DateTimeFormat("hr-HR", {
+  timeZone: "Europe/Zagreb",
   day: "numeric",
   month: "long",
   year: "numeric",
 });
 const DATETIME = new Intl.DateTimeFormat("hr-HR", {
+  timeZone: "Europe/Zagreb",
   day: "2-digit",
   month: "2-digit",
   year: "numeric",

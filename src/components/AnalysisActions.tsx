@@ -9,10 +9,10 @@ const ICON: Record<AnalysisMode, (p: { size?: number }) => React.ReactElement> =
   detaljna: IDocs,
 };
 
-export default function AnalysisActions({ doc }: { doc: DocumentRec }) {
+export default function AnalysisActions({ doc, modes = MODES }: { doc: DocumentRec; modes?: AnalysisMode[] }) {
   return (
     <div className="actions-row">
-      {MODES.map((m) => {
+      {modes.map((m) => {
         const a = analysisOf(doc, m);
         const Icon = ICON[m];
         if (!a) {
@@ -21,7 +21,7 @@ export default function AnalysisActions({ doc }: { doc: DocumentRec }) {
         const dot = a.status === "analizirano" ? "lo" : a.status === "u_obradi" ? "mid" : "hi";
         const sub =
           a.status === "analizirano"
-            ? "Otvori u zasebnom prozoru ↗"
+            ? "Otvori analizu →"
             : a.status === "u_obradi"
             ? "U obradi…"
             : "Nije uspjelo — pokušaj ponovno";
@@ -30,8 +30,6 @@ export default function AnalysisActions({ doc }: { doc: DocumentRec }) {
             key={m}
             href={`/dokumenti/${doc.id}?analiza=${m}`}
             className="action-card"
-            target="_blank"
-            rel="noopener"
           >
             <span className="ac-icon"><Icon size={17} /></span>
             <span className="ac-main">

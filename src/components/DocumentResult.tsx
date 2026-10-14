@@ -1,3 +1,5 @@
+"use client";
+import { AnalysisSource } from "@/components/EvidenceWorkspace";
 import type { ExtractionResult, Izvor } from "@/lib/types";
 import { formatDate } from "@/lib/format";
 import { AiNote } from "@/components/ui";
@@ -16,12 +18,7 @@ import {
 
 function Src({ izvor }: { izvor?: Izvor | null }) {
   if (!izvor || (!izvor.clanak && !izvor.citat)) return null;
-  return (
-    <details className="src">
-      <summary>detaljnije{izvor.clanak ? ` · ${izvor.clanak}` : ""}</summary>
-      {izvor.citat && <div className="src-quote">„{izvor.citat}”</div>}
-    </details>
-  );
+  return <AnalysisSource heading={izvor.clanak} quote={izvor.citat}/>;
 }
 
 function Section({

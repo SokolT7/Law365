@@ -1,3 +1,6 @@
+import { readJsonObject } from "@/lib/auth";
+import { AccessError } from "@/lib/auth";
+import { apiRoute } from "@/lib/api-access";
 import { NextResponse } from "next/server";
 import { randomUUID } from "crypto";
 import { readDB, writeDB, addAudit } from "@/lib/db";
@@ -8,13 +11,15 @@ import type { ChatMessage } from "@/lib/types";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-export async function POST(req: Request) {
-  const body = (await req.json()) as {
+async function handlePOST(req: Request) {
+  const body = (await readJsonObject(req, 8*1024*1024)) as {
     documentId: string;
     message: string;
     image?: { mediaType: string; data: string };
   };
   const { documentId, message, image } = body;
+  if (typeof documentId !== "string" || typeof message !== "string" || message.length > 12000) throw new AccessError(400,"Provjerite pitanje (najviše 12.000 znakova).");
+  if (image && (typeof image.data !== "string" || image.data.length > 7*1024*1024 || !/^[A-Za-z0-9+/]*={0,2}$/.test(image.data) || !["image/png","image/jpeg","image/webp","image/gif"].includes(image.mediaType))) throw new AccessError(400,"Slika nije podržana ili je prevelika.");
   if (!message || !message.trim()) {
     return NextResponse.json({ error: "Poruka je prazna." }, { status: 400 });
   }
@@ -54,8 +59,10 @@ export async function POST(req: Request) {
     citations: result.citations,
   };
   doc.conversation = [...history, userMsg, aiMsg];
-  addAudit(db, "Postavio pitanje u razgovoru", message.slice(0, 80));
-  await writeDB(db);
+  addAudit(db, "Postavio pitanje u razgovoru", doc.title, "document_chat");
+  await writeDB(db, "document_chat");
 
   return NextResponse.json({ answer: result.answer, citations: result.citations });
 }
+
+export const POST = apiRoute("document_chat", handlePOST);

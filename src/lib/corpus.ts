@@ -105,6 +105,7 @@ export const CORPUS: CorpusEntry[] = [
 
 /** Korpus preveden u Chunk oblik radi zajedničkog pretraživanja (searchChunks). */
 export function corpusChunks(enabled: Record<string, boolean>): Chunk[] {
+  if (process.env.LTBLAW_DEMO_SOURCES !== "true" || process.env.NODE_ENV === "production") return [];
   return CORPUS.filter((e) => enabled[e.sourceId]).map((e, i) => ({
     id: `corpus-${i}`,
     documentId: `corpus:${e.sourceId}`,

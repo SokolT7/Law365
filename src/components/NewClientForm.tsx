@@ -1,0 +1,7 @@
+"use client";
+import {useState} from "react";
+import {useRouter} from "next/navigation";
+export default function NewClientForm(){
+ const router=useRouter();const [busy,setBusy]=useState(false);const [error,setError]=useState("");
+ return <details className="card card-pad" style={{marginBottom:24}}><summary className="t-title">＋ Novi klijent</summary><form className="form-stack" style={{marginTop:20}} onSubmit={async e=>{e.preventDefault();setBusy(true);setError("");const form=new FormData(e.currentTarget);try{const res=await fetch("/api/clients",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(Object.fromEntries(form.entries()))});const data=await res.json();if(!res.ok)throw new Error(data.error);router.push(`/klijenti/${data.id}`);router.refresh();}catch(e){setError(e instanceof Error?e.message:"Klijent nije spremljen.");setBusy(false);}}}><div className="grid grid-2"><label className="field">Naziv klijenta<input name="name" required maxLength={200}/></label><label className="field">Djelatnost<input name="sector" maxLength={200}/></label><label className="field">OIB (neobavezno)<input name="oib" inputMode="numeric" pattern="[0-9]{11}" maxLength={11}/></label><label className="field">Kontakt (neobavezno)<input name="contact" maxLength={200}/></label></div>{error&&<p className="flash err" role="alert">{error}</p>}<div><button className="btn btn-primary" disabled={busy}>{busy?"Spremanje…":"Dodaj klijenta"}</button></div></form></details>;
+}

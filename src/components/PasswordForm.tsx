@@ -1,0 +1,7 @@
+"use client";
+import {useState} from "react";
+export default function PasswordForm(){
+ const [error,setError]=useState("");const [busy,setBusy]=useState(false);
+ return <form className="form-stack" onSubmit={async e=>{e.preventDefault();setBusy(true);setError("");const form=new FormData(e.currentTarget);if(form.get("newPassword")!==form.get("confirmation")){setError("Lozinke se ne podudaraju.");setBusy(false);return;}try{const res=await fetch("/api/auth/password",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({currentPassword:form.get("currentPassword"),newPassword:form.get("newPassword")})});const data=await res.json();if(!res.ok)throw new Error(data.error);window.location.assign("/prijava");}catch(e){setError(e instanceof Error?e.message:"Promjena nije uspjela.");setBusy(false);}}}>
+ <label className="field">Trenutna lozinka<input type="password" name="currentPassword" autoComplete="current-password" required/></label><label className="field">Nova lozinka<input type="password" name="newPassword" minLength={12} maxLength={128} autoComplete="new-password" required/><small>Najmanje 12 znakova.</small></label><label className="field">Ponovite novu lozinku<input type="password" name="confirmation" minLength={12} maxLength={128} autoComplete="new-password" required/></label>{error&&<p role="alert" className="flash err">{error}</p>}<button className="btn btn-primary" disabled={busy}>{busy?"Spremanje…":"Promijeni lozinku"}</button></form>;
+}

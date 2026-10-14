@@ -62,6 +62,8 @@ export async function chatAnswer(opts: {
   ];
   const scored = pool.length > 0 ? searchChunks(question, pool, 6) : [];
   const citations: ChatCitation[] = scored.map((s) => ({
+    documentId: s.chunk.documentId,
+    chunkId: s.chunk.id,
     documentTitle: titleOf(s.chunk.documentId),
     heading: s.chunk.heading,
     snippet: snippet(s.chunk.text),
@@ -99,7 +101,7 @@ export async function chatAnswer(opts: {
       const out = textOf(resp);
       if (out) return { answer: out, citations };
     } catch {
-      /* tihi fallback */
+      throw new Error("Odgovor trenutačno nije dostupan.");
     }
   }
 
@@ -122,7 +124,7 @@ export async function chatAnswer(opts: {
   }
   const top = scored[0];
   return {
-    answer: `Prema izvoru „${titleOf(top.chunk.documentId)}”, u dijelu „${top.chunk.heading}” navodi se: ${snippet(top.chunk.text, 360)}`,
+    answer: `Izdvojeni tekst (bez AI obrade): prema izvoru „${titleOf(top.chunk.documentId)}”, u dijelu „${top.chunk.heading}” navodi se: ${snippet(top.chunk.text, 360)}`,
     citations,
   };
 }

@@ -1,3 +1,6 @@
+import { requireFeature, AccessError } from "@/lib/auth";
+import { hasFeature } from "@/lib/features";
+import { apiRoute, readUploadForm } from "@/lib/api-access";
 import { NextResponse } from "next/server";
 import { randomUUID } from "crypto";
 import { readDB, writeDB, addAudit } from "@/lib/db";
@@ -13,9 +16,12 @@ function titleFromName(name: string): string {
   return base.charAt(0).toUpperCase() + base.slice(1);
 }
 
-export async function POST(req: Request) {
-  const form = await req.formData();
+async function handlePOST(req: Request) {
+  const session = await requireFeature("documents");
+  if (Number(req.headers.get("content-length") || 0) > 26 * 1024 * 1024) throw new AccessError(413,"Zahtjev je prevelik (najviše 25 MB).");
+  const form = await readUploadForm(req);
   const files = form.getAll("file").filter((f): f is File => f instanceof File);
+  if (files.length > 10 || files.some(f => f.size > 10 * 1024 * 1024) || files.reduce((n,f)=>n+f.size,0) > 25*1024*1024) throw new AccessError(413,"Najviše 10 datoteka, 10 MB po datoteci i 25 MB ukupno.");
   if (files.length === 0) {
     return NextResponse.json({ error: "Datoteka nije priložena." }, { status: 400 });
   }
@@ -68,6 +74,7 @@ export async function POST(req: Request) {
     typeof requestedClient === "string" && requestedClient
       ? db.clients.find((c) => c.id === requestedClient)
       : undefined;
+  if (requestedClient && (!hasFeature(session.firm, "clients") || !existing)) throw new AccessError(400,"Odabrani klijent nije dostupan.");
   let clientId: string;
   if (existing) {
     clientId = existing.id;
@@ -85,8 +92,8 @@ export async function POST(req: Request) {
     role: "assistant",
     text:
       names.length === 1
-        ? `Učitao sam „${names[0]}”. Pitajte me bilo što o dokumentu, ili gore pokrenite Sažetak ili Detaljnu analizu.`
-        : `Učitao sam ${names.length} dokumenta. Pitajte me o njima, ili gore pokrenite Sažetak ili Detaljnu analizu.`,
+        ? `Učitao sam „${names[0]}”. Dokument je spreman za rad. Dostupne funkcije prikazane su u ovom radnom prostoru.`
+        : `Učitao sam ${names.length} dokumenta. Dokumenti su spremni za rad. Dostupne funkcije prikazane su u ovom radnom prostoru.`,
     ts: now,
   };
 
@@ -103,8 +110,10 @@ export async function POST(req: Request) {
     conversation: [greeting],
   };
   db.documents.push(doc);
-  addAudit(db, "Učitao dokument u radni prostor", title);
-  await writeDB(db);
+  addAudit(db, "Učitao dokument u radni prostor", title, "documents");
+  await writeDB(db, "documents");
 
   return NextResponse.json({ id: docId });
 }
+
+export const POST = apiRoute("documents", handlePOST);

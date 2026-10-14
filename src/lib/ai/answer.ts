@@ -96,11 +96,11 @@ export async function answerQuestion(
       const a = await answerWithClaude(question, scored, titleOf);
       if (a) return { answer: a, citations };
     } catch {
-      /* tihi fallback na DEMO odgovor */
+      throw new Error("Odgovor trenutačno nije dostupan.");
     }
   }
 
   const top = scored[0];
-  const answer = `Prema izvoru „${titleOf(top.chunk.documentId)}”, u dijelu „${top.chunk.heading}” navodi se: ${snippet(top.chunk.text, 360)}`;
+  const answer = `Izdvojeni tekst (bez AI obrade): prema izvoru „${titleOf(top.chunk.documentId)}”, u dijelu „${top.chunk.heading}” navodi se: ${snippet(top.chunk.text, 360)}`;
   return { answer, citations };
 }

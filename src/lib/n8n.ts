@@ -1,3 +1,4 @@
+import { timingSafeEqual } from "crypto";
 import type { AnalysisMode, ExtractionRequest } from "@/lib/types";
 
 export function n8nSecret(): string {
@@ -15,9 +16,8 @@ export function webhookUrlFor(mode: AnalysisMode): string {
 export function getBaseUrl(req: Request): string {
   if (process.env.APP_BASE_URL) return process.env.APP_BASE_URL.replace(/\/$/, "");
   if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
-  const host = req.headers.get("host");
-  const proto = req.headers.get("x-forwarded-proto") || "http";
-  return host ? `${proto}://${host}` : "http://localhost:3000";
+  if (process.env.NODE_ENV === "production") throw new Error("APP_BASE_URL mora biti postavljen.");
+  return new URL(req.url).origin;
 }
 
 export interface FireParams {
@@ -51,6 +51,7 @@ export async function fireExtraction(p: FireParams): Promise<void> {
     method: "POST",
     headers: { "Content-Type": "application/json", "x-ltblaw-secret": n8nSecret() },
     body: JSON.stringify(payload),
+    signal: AbortSignal.timeout(20000),
   });
   if (!res.ok) throw new Error(`n8n webhook vratio ${res.status}`);
 }
@@ -58,6 +59,7 @@ export async function fireExtraction(p: FireParams): Promise<void> {
 /** Provjera dijeljene tajne na dolaznom callbacku. */
 export function verifySecret(req: Request): boolean {
   const secret = n8nSecret();
-  if (!secret) return true;
-  return req.headers.get("x-ltblaw-secret") === secret;
+  const supplied = req.headers.get("x-ltblaw-secret") || "";
+  if (!secret || Buffer.byteLength(secret) !== Buffer.byteLength(supplied)) return false;
+  return timingSafeEqual(Buffer.from(secret), Buffer.from(supplied));
 }

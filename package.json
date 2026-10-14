@@ -5,7 +5,12 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "setup:admin": "node scripts/setup-admin.mjs",
+    "typecheck": "tsc --noEmit",
+    "test": "node scripts/test-platform.mjs",
+    "test:integration": "node scripts/test-http.mjs",
+    "test:workspace": "node scripts/test-workspace.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "latest",
@@ -21,5 +26,8 @@
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "typescript": "^5.7.3"
+  },
+  "engines": {
+    "node": ">=22.13.0 <23 || >=24"
   }
 }

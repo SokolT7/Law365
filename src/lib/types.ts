@@ -117,6 +117,8 @@ export interface Analysis {
 }
 
 export interface ChatCitation {
+  documentId?: string;
+  chunkId?: string;
   documentTitle: string;
   heading: string;
   snippet: string;
@@ -144,6 +146,7 @@ export interface DocumentRec {
 }
 
 export interface AuditEvent {
+  feature?: import("./features").FeatureKey;
   id: string;
   ts: string;
   actor: string;

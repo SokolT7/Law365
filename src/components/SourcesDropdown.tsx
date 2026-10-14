@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { SOURCE_GROUPS } from "@/lib/sources";
+import { SOURCE_GROUPS, isSourceAvailable } from "@/lib/sources";
 import { IDatabase } from "@/components/Icons";
 
 /** Gumb „Izvori prava” s padajućim panelom prekidača —
@@ -16,6 +16,7 @@ export default function SourcesDropdown({
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [state, setState] = useState(sources);
+  const [error, setError] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -42,13 +43,16 @@ export default function SourcesDropdown({
     setState((s) => ({ ...s, [id]: next }));
     setBusy(id);
     try {
-      await fetch("/api/sources", {
+      const response = await fetch("/api/sources", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id, enabled: next }),
       });
+      if (!response.ok) throw new Error();
+      setError("");
       router.refresh();
     } catch {
+      setError("Promjena nije spremljena. Pokušajte ponovno.");
       setState((s) => ({ ...s, [id]: !next }));
     } finally {
       setBusy(null);
@@ -81,9 +85,9 @@ export default function SourcesDropdown({
                   type="button"
                   className="srcdd-row"
                   onClick={() => toggle(it.id)}
-                  disabled={busy === it.id}
+                  disabled={busy !== null || !isSourceAvailable(it.id)}
                 >
-                  <span className="srcdd-name">{it.name}</span>
+                  <span className="srcdd-name">{it.name}{!isSourceAvailable(it.id) && <small className="muted"> · Nije povezano</small>}</span>
                   <span
                     role="switch"
                     aria-checked={!!state[it.id]}
@@ -95,6 +99,7 @@ export default function SourcesDropdown({
               ))}
             </div>
           ))}
+          {error && <p role="alert" className="flash err">{error}</p>}
           <Link href="/izvori" className="srcdd-all">
             Puni pregled izvora →
           </Link>

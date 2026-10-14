@@ -59,7 +59,7 @@ export const SOURCE_GROUPS: SourceGroup[] = [
   },
 ];
 
-const DEFAULT_ON = new Set(["rh-zakoni", "rh-praksa", "eu-propisi", "vasi-dokumenti"]);
+const DEFAULT_ON = new Set(["vasi-dokumenti"]);
 
 export function defaultSources(): Record<string, boolean> {
   const out: Record<string, boolean> = {};
@@ -74,3 +74,6 @@ export function allSourceItems(): SourceItem[] {
 export function sourceName(id: string): string {
   return allSourceItems().find((s) => s.id === id)?.name ?? id;
 }
+
+/** Only the uploaded-document connector is operational in this implementation. */
+export function isSourceAvailable(id: string): boolean { return id === "vasi-dokumenti"; }

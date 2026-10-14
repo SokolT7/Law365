@@ -1,6 +1,6 @@
 import type { DocStatus } from "@/lib/types";
 import { STATUS_LABEL } from "@/lib/format";
-import { ILock, ISpark } from "@/components/Icons";
+import { IBook } from "@/components/Icons";
 
 export function PageHeader({
   title,
@@ -12,26 +12,19 @@ export function PageHeader({
   children?: React.ReactNode;
 }) {
   return (
-    <div className="topbar">
+    <header className="topbar">
       <div>
         <h1>{title}</h1>
         {subtitle && <div className="sub">{subtitle}</div>}
       </div>
-      {children && <div className="flex">{children}</div>}
-    </div>
+      {children && <div className="page-actions">{children}</div>}
+    </header>
   );
 }
 
+/** Firm identity is persistent in the shell; avoid repeating unverified data promises. */
 export function TenantBanner() {
-  return (
-    <div className="banner">
-      <ILock size={16} />
-      <span>
-        <b>Radi unutar vašeg sustava.</b> Obradu pokreće vaš n8n · Claude se ne trenira na vašim
-        podacima · svaka stavka ima naveden izvor.
-      </span>
-    </div>
-  );
+  return null;
 }
 
 const STATUS_CLASS: Record<DocStatus, string> = {
@@ -44,10 +37,10 @@ export function DocStatusBadge({ status }: { status: DocStatus }) {
   return <span className={`badge ${STATUS_CLASS[status]}`}>{STATUS_LABEL[status]}</span>;
 }
 
-export function AiNote({ label = "Generirao Claude — provjerite" }: { label?: string }) {
+export function AiNote({ label = "AI prijedlog · provjerite izvore" }: { label?: string }) {
   return (
     <span className="ai-note">
-      <ISpark size={12} /> {label}
+      <IBook size={12} aria-hidden="true" /> {label}
     </span>
   );
 }

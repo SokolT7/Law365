@@ -1,3 +1,6 @@
+import { requireFeature, AccessError } from "@/lib/auth";
+import { hasFeature } from "@/lib/features";
+import { apiRoute, readUploadForm } from "@/lib/api-access";
 import { NextResponse } from "next/server";
 import { randomUUID } from "crypto";
 import { readDB, writeDB, addAudit } from "@/lib/db";
@@ -9,13 +12,16 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 /** Dodaje još dokumenata u postojeći radni prostor. */
-export async function POST(
+async function handlePOST(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const form = await req.formData();
+  const session = await requireFeature("documents");
+  if (Number(req.headers.get("content-length") || 0) > 26 * 1024 * 1024) throw new AccessError(413,"Zahtjev je prevelik (najviše 25 MB).");
+  const form = await readUploadForm(req);
   const files = form.getAll("file").filter((f): f is File => f instanceof File);
+  if (files.length > 10 || files.some(f => f.size > 10 * 1024 * 1024) || files.reduce((n,f)=>n+f.size,0) > 25*1024*1024) throw new AccessError(413,"Najviše 10 datoteka, 10 MB po datoteci i 25 MB ukupno.");
   if (files.length === 0) {
     return NextResponse.json({ error: "Datoteka nije priložena." }, { status: 400 });
   }
@@ -56,8 +62,10 @@ export async function POST(
 
   db.chunks.push(...chunks);
   doc.files = [...(doc.files ?? [doc.filename]), ...added];
-  addAudit(db, "Dodao dokument u razgovor", added.join(", "));
-  await writeDB(db);
+  addAudit(db, "Dodao dokument u razgovor", added.join(", "), "documents");
+  await writeDB(db, "documents");
 
   return NextResponse.json({ ok: true, added });
 }
+
+export const POST = apiRoute("documents", handlePOST);

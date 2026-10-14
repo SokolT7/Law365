@@ -1,56 +1,24 @@
 "use client";
-
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-const COMPOSER_SOURCES: { id: string; label: string }[] = [
-  { id: "vasi-dokumenti", label: "Vaši dokumenti" },
-  { id: "rh-praksa", label: "Sudska praksa" },
-  { id: "eu-propisi", label: "EU propisi" },
-  { id: "web", label: "Web" },
-];
-
-export default function SourceChips({ enabled }: { enabled: Record<string, boolean> }) {
+export default function SourceChips({ enabled, editable = false }: { enabled: Record<string, boolean>; editable?: boolean }) {
   const router = useRouter();
-  const [state, setState] = useState(enabled);
-  const [busy, setBusy] = useState<string | null>(null);
-
-  async function toggle(id: string) {
-    const next = !state[id];
-    setState((s) => ({ ...s, [id]: next }));
-    setBusy(id);
+  const [on, setOn] = useState(!!enabled["vasi-dokumenti"]);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  async function toggle() {
+    if (!editable || busy) return;
+    setBusy(true); setError("");
     try {
-      await fetch("/api/sources", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id, enabled: next }),
-      });
-      router.refresh();
-    } catch {
-      setState((s) => ({ ...s, [id]: !next }));
-    } finally {
-      setBusy(null);
-    }
+      const response = await fetch("/api/sources", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: "vasi-dokumenti", enabled: !on }) });
+      if (!response.ok) throw new Error();
+      setOn(!on); router.refresh();
+    } catch { setError("Promjena izvora nije spremljena."); }
+    finally { setBusy(false); }
   }
-
-  return (
-    <div className="source-chips">
-      <span className="sc-lab">Izvori</span>
-      {COMPOSER_SOURCES.map((s) => {
-        const on = !!state[s.id];
-        return (
-          <button
-            key={s.id}
-            type="button"
-            className={`source-chip${on ? " on" : ""}`}
-            onClick={() => toggle(s.id)}
-            disabled={busy === s.id}
-          >
-            <span className="sc-dot" />
-            {s.label}
-          </button>
-        );
-      })}
-    </div>
-  );
+  return <div className="source-chips"><span className="sc-lab">Izvori</span>
+    {editable ? <button type="button" className={`source-chip${on ? " on" : ""}`} aria-pressed={on} onClick={toggle} disabled={busy}><span className="sc-dot" />Vaši dokumenti</button> : <span className={`source-chip${on ? " on" : ""}`}><span className="sc-dot" />{on ? "Vaši dokumenti" : "Izvori nisu uključeni"}</span>}
+    {error && <span role="alert" className="t-sub">{error}</span>}
+  </div>;
 }

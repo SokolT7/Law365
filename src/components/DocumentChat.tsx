@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { ChatMessage } from "@/lib/types";
 import { IPaperclip, IImage, ISend } from "@/components/Icons";
+import { EvidenceButton } from "./EvidenceWorkspace";
+import useDraftGuard from "./useDraftGuard";
 import SourceChips from "@/components/SourceChips";
 
 const SUGGESTIONS = [
@@ -22,10 +24,12 @@ export default function DocumentChat({
   documentId,
   initialMessages,
   sources,
+  canManageSources = false,
 }: {
   documentId: string;
   initialMessages: ChatMessage[];
   sources: Record<string, boolean>;
+  canManageSources?: boolean;
 }) {
   const router = useRouter();
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
@@ -37,8 +41,11 @@ export default function DocumentChat({
   const imgInput = useRef<HTMLInputElement>(null);
   const streamRef = useRef<HTMLDivElement>(null);
 
+  useDraftGuard(!!input.trim() || !!image || busy);
+  const [newResponse,setNewResponse]=useState(false);
+  const atBottom = useRef(true);
   const scroll = () => {
-    setTimeout(() => streamRef.current?.scrollTo(0, streamRef.current.scrollHeight), 50);
+    if (atBottom.current && streamRef.current?.offsetParent !== null) setTimeout(() => streamRef.current?.scrollTo(0, streamRef.current.scrollHeight), 50);
   };
   useEffect(() => {
     scroll();
@@ -56,6 +63,8 @@ export default function DocumentChat({
       { id: uid(), role: "user", text: q, ts: new Date().toISOString(), hasImage: !!img },
     ]);
     setBusy(true);
+    setError(null);
+    atBottom.current = true;
     scroll();
     try {
       const res = await fetch("/api/chat", {
@@ -68,6 +77,8 @@ export default function DocumentChat({
         }),
       });
       const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Odgovor nije dostupan.");
+      if (!atBottom.current || streamRef.current?.offsetParent === null) setNewResponse(true);
       setMessages((m) => [
         ...m,
         {
@@ -78,11 +89,11 @@ export default function DocumentChat({
           citations: data.citations,
         },
       ]);
-    } catch {
-      setMessages((m) => [
-        ...m,
-        { id: uid(), role: "assistant", text: "Došlo je do pogreške.", ts: new Date().toISOString() },
-      ]);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Odgovor nije dostupan. Pokušajte ponovno.");
+      setInput(text);
+      setImage(img);
+      setMessages(m=>m.slice(0,-1));
     } finally {
       setBusy(false);
       scroll();
@@ -104,7 +115,7 @@ export default function DocumentChat({
           {
             id: uid(),
             role: "assistant",
-            text: `📎 Dodao sam: ${data.added.join(", ")}. Sada je dio ovog razgovora.`,
+            text: `Dodani dokumenti: ${data.added.join(", ")}. Sada je dio ovog razgovora.`,
             ts: new Date().toISOString(),
           },
         ]);
@@ -121,6 +132,7 @@ export default function DocumentChat({
   function attachImage(files: FileList | null) {
     const f = files?.[0];
     if (!f) return;
+    if (!["image/png","image/jpeg","image/webp","image/gif"].includes(f.type) || f.size > 5*1024*1024) {setError("Slika mora biti PNG, JPEG, WebP ili GIF, do 5 MB.");return;}
     const reader = new FileReader();
     reader.onload = () => {
       const url = String(reader.result);
@@ -132,33 +144,33 @@ export default function DocumentChat({
   return (
     <div className="chat-glass-wrap">
     <div className="chat-wrap glass">
-      <div className="chat-stream" ref={streamRef}>
+      <div className="chat-stream" ref={streamRef} onScroll={()=>{const el=streamRef.current;if(el)atBottom.current=el.scrollHeight-el.scrollTop-el.clientHeight<100;}}>
+        {messages.length === 0 && <div className="chat-welcome"><span className="workspace-kicker">VAŠ DOKUMENT, U FOKUSU</span><h2>Što želite razjasniti?</h2><p>Postavite pitanje o ovom dokumentu. Izvore uz odgovor možete otvoriti bez napuštanja razgovora.</p></div>}
         {messages.map((m) => (
           <div key={m.id} className={`bubble ${m.role}`}>
-            {m.hasImage && <div className="bubble-img">🖼️ priložena slika</div>}
+            {m.hasImage && <div className="bubble-img">Priložena slika</div>}
             <div style={{ whiteSpace: "pre-wrap" }}>{m.text}</div>
             {m.citations && m.citations.length > 0 && (
               <div className="cites">
                 {m.citations.map((c, i) => (
-                  <div key={i} className="cite">
-                    <div className="c-head">{c.documentTitle} — {c.heading}</div>
-                    <div className="c-snip">{c.snippet}</div>
-                  </div>
+                  <EvidenceButton key={i} citation={c}/>
                 ))}
               </div>
             )}
           </div>
         ))}
-        {busy && <div className="bubble ai">Razmišljam…</div>}
+        {busy && <div className="bubble ai">Pripremam odgovor…</div>}
       </div>
 
       <div>
-        {error && <div className="flash err" style={{ marginBottom: 8 }}>{error}</div>}
-        <SourceChips enabled={sources} />
+        {newResponse && <button type="button" className="btn btn-sm new-response" onClick={()=>{atBottom.current=true;setNewResponse(false);scroll();}}>Novi odgovor ↓</button>}
+        {error && <div role="alert" className="flash err" style={{ marginBottom: 8 }}>{error}</div>}
+        <p className="composer-scope">Opseg: ovaj dokument i datoteke dodane u ovaj razgovor.</p>
+        <SourceChips enabled={sources} editable={canManageSources} />
         {messages.length <= 1 && (
           <div className="suggest">
             {SUGGESTIONS.map((s) => (
-              <button key={s} className="btn btn-sm" onClick={() => send(s)}>{s}</button>
+              <button key={s} className="btn btn-sm" disabled={busy} onClick={() => setInput(s)}>{s}</button>
             ))}
           </div>
         )}
@@ -166,24 +178,25 @@ export default function DocumentChat({
           <div className="attach-preview">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={image.preview} alt="prilog" />
-            <button type="button" className="x" onClick={() => setImage(null)}>×</button>
+            <button type="button" className="x" aria-label="Ukloni sliku" onClick={() => setImage(null)}>×</button>
           </div>
         )}
         <form className="composer" onSubmit={(e) => { e.preventDefault(); send(input); }}>
-          <button type="button" className="comp-icon" title="Dodaj dokument" onClick={() => docInput.current?.click()}>
+          <button type="button" disabled={busy} className="comp-icon" aria-label="Dodaj dokument" title="Dodaj dokument" onClick={() => docInput.current?.click()}>
             <IPaperclip size={18} />
           </button>
-          <button type="button" className="comp-icon" title="Dodaj sliku" onClick={() => imgInput.current?.click()}>
+          <button type="button" disabled={busy} className="comp-icon" aria-label="Dodaj sliku" title="Dodaj sliku" onClick={() => imgInput.current?.click()}>
             <IImage size={18} />
           </button>
           <input
+            aria-label="Pitanje o dokumentu"
             className="comp-text"
             placeholder="Pitajte bilo što o dokumentu…"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             disabled={busy}
           />
-          <button className="btn btn-primary comp-send" type="submit" disabled={busy}>
+          <button aria-label="Pošalji pitanje" className="btn btn-primary comp-send" type="submit" disabled={busy || (!input.trim() && !image)}>
             <ISend size={16} />
           </button>
         </form>
