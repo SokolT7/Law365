@@ -1,3 +1,6 @@
+import type { DeadlineCalculation, ResearchThread, SearchStep, SourceRecord, Verification } from "@/lib/research/types";
+import type { Playbook } from "@/lib/research/playbooks";
+import type { ReviewTemplate } from "@/lib/review-templates";
 export type DocStatus = "u_obradi" | "analizirano" | "greska";
 export type Mode = "demo" | "live";
 /** Vrsta obrade dokumenta. */
@@ -112,6 +115,8 @@ export interface Analysis {
   status: DocStatus;
   jobId: string;
   createdAt: string;
+  /** When the processing service reported the result (drives notifications). */
+  completedAt?: string;
   result?: ExtractionResult;
   error?: string;
 }
@@ -130,6 +135,19 @@ export interface ChatMessage {
   ts: string;
   citations?: ChatCitation[];
   hasImage?: boolean;
+  /** Typed, snapshotted sources (new streaming answers). */
+  sources?: SourceRecord[];
+  steps?: SearchStep[];
+  verification?: Verification;
+  calculation?: DeadlineCalculation;
+  stopped?: boolean;
+}
+
+export interface ReviewDecision {
+  status?: "prihvaceno" | "odbaceno";
+  comment?: string;
+  by: string;
+  at: string;
 }
 
 export interface DocumentRec {
@@ -142,6 +160,8 @@ export interface DocumentRec {
   matterId: string;
   createdAt: string;
   analyses: Analysis[]; // 0–2 obrade (po jedna za svaku vrstu)
+  /** Lawyer decisions on review topics, keyed "templateId:topicId". */
+  reviewDecisions?: Record<string, ReviewDecision>;
   conversation?: ChatMessage[];
 }
 
@@ -156,6 +176,10 @@ export interface AuditEvent {
 
 export interface Settings {
   sources: Record<string, boolean>;
+  /** Set once a firm admin has chosen sources after the legal store was connected. */
+  sourcesReviewed?: boolean;
+  playbooks?: Playbook[];
+  reviewTemplates?: ReviewTemplate[];
 }
 
 /* ---------- Praćenje propisa (regulatorne promjene) ---------- */
@@ -186,6 +210,7 @@ export interface DB {
   audit: AuditEvent[];
   settings?: Settings;
   regUpdates?: RegUpdate[]; // tolerantno čitanje starijih baza
+  research?: ResearchThread[];
 }
 
 /* ---------- Ugovor između nadzorne ploče i n8n-a ---------- */

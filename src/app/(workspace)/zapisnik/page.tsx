@@ -1,4 +1,5 @@
-import Link from "next/link";
+import AutoFilter from "@/components/AutoFilter";
+import { ISearch } from "@/components/Icons";
 import { readWorkspaceDB } from "@/lib/db";
 import { workspaceSession } from "@/lib/workspace";
 import { formatDateTime } from "@/lib/format";
@@ -20,13 +21,11 @@ export default async function AuditPage({ searchParams }: { searchParams: Promis
   return <>
     <PageHeader title="Zapisnik aktivnosti" subtitle="Radnje i promjene zabilježene u vašem uredu · vrijeme Europe/Zagreb"/>
     <div className="content">
-      <form className="register-toolbar" method="get">
-        <label className="search-field"><span className="sr-only">Pretraži aktivnosti</span><input type="search" name="q" defaultValue={q} placeholder="Radnja, predmet ili korisnik…"/></label>
+      <AutoFilter resultLabel={q || korisnik || funkcija ? `${filtered.length} zapisa` : undefined} clearHref="/zapisnik" active={!!(q || korisnik || funkcija)}>
+        <label className="search-field"><ISearch aria-hidden="true" /><span className="sr-only">Pretraži aktivnosti</span><input type="search" name="q" defaultValue={q} placeholder="Radnja, predmet ili korisnik…"/></label>
         <label><span className="sr-only">Korisnik</span><select name="korisnik" defaultValue={korisnik}><option value="">Svi korisnici</option>{actors.map(actor => <option key={actor} value={actor}>{actor}</option>)}</select></label>
         <label><span className="sr-only">Funkcija</span><select name="funkcija" defaultValue={funkcija}><option value="">Sve funkcije</option>{modules.map(f => <option key={f.key} value={f.key}>{f.label}</option>)}</select></label>
-        <button type="submit" className="btn">Primijeni</button>
-        {(q || korisnik || funkcija) && <Link className="btn btn-ghost" href="/zapisnik">Očisti filtre</Link>}
-      </form>
+      </AutoFilter>
       <section className="card">
         <div className="card-head"><h3>Aktivnosti ureda</h3><span className="t-sub">{filtered.length} zapisa</span></div>
         {!filtered.length ? <div className="empty"><h3>{db.audit.length ? "Nema odgovarajućih aktivnosti" : "Još nema zabilježenih aktivnosti"}</h3><p>{db.audit.length ? "Promijenite ili očistite filtre." : "Radnje vašeg ureda pojavit će se ovdje."}</p></div> : <>

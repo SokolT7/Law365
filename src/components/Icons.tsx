@@ -7,7 +7,7 @@ const base = (size = 18): SVGProps<SVGSVGElement> => ({
   viewBox: "0 0 24 24",
   fill: "none",
   stroke: "currentColor",
-  strokeWidth: 1.8,
+  strokeWidth: 1.6,
   strokeLinecap: "round" as const,
   strokeLinejoin: "round" as const,
 });
@@ -86,4 +86,73 @@ export const ISend = ({ size, ...p }: P) => (
 );
 export const ISummary = ({ size, ...p }: P) => (
   <svg {...base(size)} {...p}><path d="M5 5h14M5 9.5h14M5 14h9M5 18.5h6" /></svg>
+);
+export const IArrowRight = ({ size, ...p }: P) => (
+  <svg {...base(size)} {...p}><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+);
+export const IArrowLeft = ({ size, ...p }: P) => (
+  <svg {...base(size)} {...p}><path d="M19 12H5M11 6l-6 6 6 6" /></svg>
+);
+export const IArrowUpRight = ({ size, ...p }: P) => (
+  <svg {...base(size)} {...p}><path d="M7 17 17 7M8 7h9v9" /></svg>
+);
+export const IArrowDown = ({ size, ...p }: P) => (
+  <svg {...base(size)} {...p}><path d="M12 5v14M6 13l6 6 6-6" /></svg>
+);
+export const IChevronDown = ({ size, ...p }: P) => (
+  <svg {...base(size)} {...p}><path d="m6 9 6 6 6-6" /></svg>
+);
+export const IChevronRight = ({ size, ...p }: P) => (
+  <svg {...base(size)} {...p}><path d="m9 6 6 6-6 6" /></svg>
+);
+export const IPlus = ({ size, ...p }: P) => (
+  <svg {...base(size)} {...p}><path d="M12 5v14M5 12h14" /></svg>
+);
+export const IMore = ({ size, ...p }: P) => (
+  <svg {...base(size)} {...p}><circle cx="5" cy="12" r="1" /><circle cx="12" cy="12" r="1" /><circle cx="19" cy="12" r="1" /></svg>
+);
+export const IEye = ({ size, ...p }: P) => (
+  <svg {...base(size)} {...p}><path d="M2.5 12S6 5 12 5s9.5 7 9.5 7-3.5 7-9.5 7-9.5-7-9.5-7z" /><circle cx="12" cy="12" r="3" /></svg>
+);
+export const IEyeOff = ({ size, ...p }: P) => (
+  <svg {...base(size)} {...p}><path d="M10.6 5.1A9.6 9.6 0 0 1 12 5c6 0 9.5 7 9.5 7a16 16 0 0 1-2.4 3.3M6.6 6.6C3.9 8.4 2.5 12 2.5 12s3.5 7 9.5 7a9.4 9.4 0 0 0 5.4-1.6" /><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2M3 3l18 18" /></svg>
+);
+export const ILogout = ({ size, ...p }: P) => (
+  <svg {...base(size)} {...p}><path d="M10 5H6a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h4M15 8l4 4-4 4M9 12h10" /></svg>
+);
+export const IUser = ({ size, ...p }: P) => (
+  <svg {...base(size)} {...p}><circle cx="12" cy="8" r="3.5" /><path d="M5 20a7 7 0 0 1 14 0" /></svg>
+);
+export const IKeyboard = ({ size, ...p }: P) => (
+  <svg {...base(size)} {...p}><rect x="2.5" y="6" width="19" height="12" rx="2" /><path d="M6.5 10h.01M10 10h.01M14 10h.01M17.5 10h.01M8 14h8" /></svg>
+);
+export const IPanelLeft = ({ size, ...p }: P) => (
+  <svg {...base(size)} {...p}><rect x="3" y="4" width="18" height="16" rx="2" /><path d="M9 4v16" /></svg>
+);
+export const IMenu = ({ size, ...p }: P) => (
+  <svg {...base(size)} {...p}><path d="M4 7h16M4 12h16M4 17h16" /></svg>
+);
+export const IStop = ({ size, ...p }: P) => (
+  <svg {...base(size)} {...p}><rect x="7" y="7" width="10" height="10" rx="1.5" fill="currentColor" stroke="none" /></svg>
+);
+export const IInfo = ({ size, ...p }: P) => (
+  <svg {...base(size)} {...p}><circle cx="12" cy="12" r="9" /><path d="M12 11v5M12 8h.01" /></svg>
+);
+export const ICheckCircle = ({ size, ...p }: P) => (
+  <svg {...base(size)} {...p}><circle cx="12" cy="12" r="9" /><path d="m8.5 12.5 2.3 2.3 4.7-5" /></svg>
+);
+export const IFile = ({ size, ...p }: P) => (
+  <svg {...base(size)} {...p}><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" /><path d="M14 3v5h5" /></svg>
+);
+export const ICopy = ({ size, ...p }: P) => (
+  <svg {...base(size)} {...p}><rect x="8" y="8" width="12" height="12" rx="2" /><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2" /></svg>
+);
+export const ICornerDownLeft = ({ size, ...p }: P) => (
+  <svg {...base(size)} {...p}><path d="M20 5v7a3 3 0 0 1-3 3H5M9 11l-4 4 4 4" /></svg>
+);
+export const IBell = ({ size, ...p }: P) => (
+  <svg {...base(size)} {...p}><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" /><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" /></svg>
+);
+export const IArrowUp = ({ size, ...p }: P) => (
+  <svg {...base(size)} {...p}><path d="M12 19V5M6 11l6-6 6 6" /></svg>
 );

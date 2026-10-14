@@ -19,10 +19,10 @@ export async function POST(req:Request){
   if(!doc||!analysis)return NextResponse.json({error:"Obrada nije pronađena."},{status:404});
   if(analysis.status!=="u_obradi"){completeJob(job.id,analysis.status==="analizirano"?"complete":"failed");return NextResponse.json({ok:true});}
   if(body.status==="ok"){
-   analysis.result=body.result;analysis.status="analizirano";analysis.error=undefined;
+   analysis.result=body.result;analysis.status="analizirano";analysis.error=undefined;analysis.completedAt=new Date().toISOString();
    // Keep the upload's classification separate from a disabled analysis module.
    addAudit(db,`Zaprimljen rezultat (${MODE_LABEL[analysis.mode]})`,doc.title, analysis.mode === "sazetak" ? "summary_analysis" : "detailed_analysis");
-  }else{analysis.status="greska";analysis.error="Obrada nije uspjela. Pokušajte ponovno.";addAudit(db,`Greška u obradi (${MODE_LABEL[analysis.mode]})`,doc.title, analysis.mode === "sazetak" ? "summary_analysis" : "detailed_analysis");}
+  }else{analysis.status="greska";analysis.error="Obrada nije uspjela. Pokušajte ponovno.";analysis.completedAt=new Date().toISOString();addAudit(db,`Greška u obradi (${MODE_LABEL[analysis.mode]})`,doc.title, analysis.mode === "sazetak" ? "summary_analysis" : "detailed_analysis");}
   await writeDB(db);completeJob(job.id,body.status==="ok"?"complete":"failed");
   return NextResponse.json({ok:true},{headers:{"Cache-Control":"no-store"}});
  }catch(error){if(error instanceof SyntaxError)return NextResponse.json({error:"Neispravan JSON."},{status:400});return apiError(error);}

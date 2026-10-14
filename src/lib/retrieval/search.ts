@@ -1,30 +1,5 @@
 import type { Chunk } from "@/lib/types";
-
-/** Uklanja hrvatske dijakritike radi robusnijeg podudaranja (č->c, š->s, ...). */
-function deburr(s: string): string {
-  return s
-    .replace(/č|ć/g, "c")
-    .replace(/Č|Ć/g, "c")
-    .replace(/đ/g, "d")
-    .replace(/Đ/g, "d")
-    .replace(/š/g, "s")
-    .replace(/Š/g, "s")
-    .replace(/ž/g, "z")
-    .replace(/Ž/g, "z");
-}
-
-const STOP = new Set([
-  "i", "u", "na", "za", "se", "je", "su", "od", "do", "the", "a", "o", "s",
-  "te", "ili", "ako", "što", "koji", "koja", "koje", "ovaj", "ova", "ovo",
-  "ugovor", "ugovora", "ugovoru", "članak", "strana", "strane",
-]);
-
-function tokenize(s: string): string[] {
-  return deburr(s.toLowerCase())
-    .replace(/[^a-z0-9čćđšž\s]/gi, " ")
-    .split(/\s+/)
-    .filter((t) => t.length > 2 && !STOP.has(t));
-}
+import { fold, synonyms, terms } from "@/lib/legal/text";
 
 export interface ScoredChunk {
   chunk: Chunk;
@@ -32,35 +7,32 @@ export interface ScoredChunk {
 }
 
 /**
- * Jednostavno leksičko pretraživanje (BM25-ish) preko ulomaka.
- * Dovoljno za kurirani demo-korpus; u produkciji se mijenja embeddingom + pgvector.
+ * Lexical search over firm document chunks (BM25-style term frequency, length-normalised),
+ * using the same Croatian stemming and legal synonyms as the legal store.
  */
-export function searchChunks(
-  query: string,
-  chunks: Chunk[],
-  limit = 4
-): ScoredChunk[] {
-  const terms = tokenize(query);
-  if (terms.length === 0) return [];
-
-  const scored: ScoredChunk[] = chunks.map((chunk) => {
-    const body = deburr((chunk.heading + " " + chunk.text).toLowerCase());
-    const headingBody = deburr(chunk.heading.toLowerCase());
-    let score = 0;
-    for (const term of terms) {
-      const matches = body.split(term).length - 1;
-      if (matches > 0) {
-        score += matches;
-        if (headingBody.includes(term)) score += 2; // naslov nosi veću težinu
-      }
-    }
-    // blaga normalizacija po duljini
-    score = score / Math.log2(body.length + 4);
-    return { chunk, score };
+export function searchChunks(query: string, chunks: Chunk[], limit = 4): ScoredChunk[] {
+  const qTerms = terms(query);
+  if (qTerms.length === 0) return [];
+  const df = new Map<string, number>();
+  const bodies = chunks.map((chunk) => {
+    const body = fold(`${chunk.heading} ${chunk.text}`);
+    for (const t of qTerms) if ([t, ...synonyms(t)].some((x) => body.includes(x))) df.set(t, (df.get(t) ?? 0) + 1);
+    return { chunk, body, heading: fold(chunk.heading) };
   });
-
-  return scored
-    .filter((s) => s.score > 0)
-    .sort((a, b) => b.score - a.score)
-    .slice(0, limit);
+  const n = Math.max(1, chunks.length);
+  const scored = bodies.map(({ chunk, body, heading }) => {
+    let score = 0;
+    let covered = 0;
+    for (const t of qTerms) {
+      const variants = [t, ...synonyms(t)];
+      const tf = variants.reduce((sum, v) => sum + (body.split(v).length - 1), 0);
+      if (!tf) continue;
+      covered++;
+      const idf = Math.log(1 + (n - (df.get(t) ?? 0) + 0.5) / ((df.get(t) ?? 0) + 0.5));
+      score += idf * ((tf * 2.2) / (tf + 1.2)) + (variants.some((v) => heading.includes(v)) ? idf : 0);
+    }
+    score *= 0.4 + covered / qTerms.length;
+    return { chunk, score: score / Math.log2(body.length / 400 + 2) };
+  });
+  return scored.filter((s) => s.score > 0).sort((a, b) => b.score - a.score).slice(0, limit);
 }

@@ -1,17 +1,25 @@
 "use client";
-import { useState } from "react";
-import { matchesQuery } from "@/lib/list-query";
-export default function ReviewDocumentSelector({ documents, selected }: { documents: { id: string; title: string }[]; selected?: string }) {
+import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { fold } from "@/components/shell/CommandPalette";
+import { ISearch } from "@/components/Icons";
+
+/** Searchable list of contracts; choosing one opens its review straight away. */
+export default function ReviewDocumentSelector({ documents, selected }: { documents: { id: string; title: string; sub?: string }[]; selected?: string }) {
+  const router = useRouter();
   const [query, setQuery] = useState("");
-  const [choice, setChoice] = useState(selected ?? "");
-  const matches = documents.filter(doc => matchesQuery(query, doc.title));
-  return <form action="/provjera" className="form-stack">
-    <label className="field">Pronađite ugovor<input type="search" value={query} onChange={event => { setQuery(event.target.value); setChoice(""); }} placeholder="Pretražite naziv dokumenta…" /></label>
-    <label className="field">Dokument<select name="dok" value={choice} required onChange={event => setChoice(event.target.value)}>
-      <option value="" disabled>Odaberite dokument</option>
-      {matches.map(doc => <option key={doc.id} value={doc.id}>{doc.title}</option>)}
-    </select></label>
-    <span className="t-sub" role="status">{matches.length ? `${matches.length} dostupnih dokumenata` : "Nema dokumenata koji odgovaraju pretrazi."}</span>
-    <button className="btn btn-primary" disabled={!choice} type="submit">Otvori provjeru →</button>
-  </form>;
+  const matches = useMemo(() => documents.filter((doc) => !query || fold(`${doc.title} ${doc.sub ?? ""}`).includes(fold(query))).slice(0, 8), [documents, query]);
+  return <div className="review-picker">
+    <label className="search-field"><ISearch aria-hidden="true" /><span className="sr-only">Pronađite ugovor</span>
+      <input type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Pronađite ugovor po nazivu…" aria-controls="review-picker-list" />
+    </label>
+    <ul id="review-picker-list" className="picker-list" aria-label="Dokumenti">
+      {matches.map((doc) => <li key={doc.id}>
+        <button type="button" className={`picker-item${doc.id === selected ? " active" : ""}`} aria-current={doc.id === selected ? "true" : undefined} onClick={() => router.push(`/provjera?dok=${doc.id}`)}>
+          <span className="t-title">{doc.title}</span>{doc.sub && <span className="t-sub">{doc.sub}</span>}
+        </button>
+      </li>)}
+      {!matches.length && <li className="t-sub picker-empty">Nema dokumenata za „{query}”.</li>}
+    </ul>
+  </div>;
 }

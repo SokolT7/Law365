@@ -83,6 +83,7 @@ async function handlePOST(
     const pending = current.documents.find(d=>d.id===id)?.analyses.find(a=>a.jobId===jobId);
     if (pending?.status === "u_obradi") {
       pending.status = "greska";
+      pending.completedAt = new Date().toISOString();
       pending.error = "Obrada trenutačno nije dostupna. Pokušajte ponovno ili se obratite administratoru.";
       await writeDB(current);
       completeJob(jobId,"failed");

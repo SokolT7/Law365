@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { FirmRecord } from "@/lib/platform";
 import { FEATURE_CATALOG, FEATURE_PRESETS, type FeatureKey } from "@/lib/features";
+import { useConfirm, useToast } from "@/components/Feedback";
 
 const ACCENTS = [
   { value: "#3D5FE5", label: "LTB plava" },
@@ -14,6 +15,8 @@ const STATUS: Record<string, string> = { draft: "U pripremi", active: "Aktivan",
 
 export default function FirmEditor({ firm }: { firm?: FirmRecord }) {
   const router = useRouter();
+  const confirm = useConfirm();
+  const toast = useToast();
   const [name, setName] = useState(firm?.name || "");
   const [legalName, setLegalName] = useState(firm?.legalName || "");
   const [accent, setAccent] = useState(firm?.accent || ACCENTS[0].value);
@@ -24,11 +27,11 @@ export default function FirmEditor({ firm }: { firm?: FirmRecord }) {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
-  function toggleFeature(key: FeatureKey) {
+  async function toggleFeature(key: FeatureKey) {
     setSuccess("");
     if (features.includes(key)) {
       const affected = FEATURE_CATALOG.filter((feature) => feature.requires.some((dependency) => dependency === key) && features.includes(feature.key));
-      if (affected.length && !window.confirm(`Isključivanjem funkcije „${FEATURE_CATALOG.find((feature) => feature.key === key)?.label}” isključit će se i: ${affected.map((feature) => feature.label).join(", ")}. Podaci će biti sačuvani. Nastaviti?`)) return;
+      if (affected.length && !(await confirm({ title: `Isključiti „${FEATURE_CATALOG.find((feature) => feature.key === key)?.label}”?`, body: <p>Isključit će se i ovisne funkcije: <b>{affected.map((feature) => feature.label).join(", ")}</b>. Podaci ostaju sačuvani.</p>, confirmLabel: "Isključi funkcije" }))) return;
       setFeatures(features.filter((feature) => feature !== key && !affected.some((item) => item.key === feature)));
     } else {
       const required = FEATURE_CATALOG.find((feature) => feature.key === key)?.requires || [];
@@ -38,16 +41,16 @@ export default function FirmEditor({ firm }: { firm?: FirmRecord }) {
 
   async function save(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (firm && firm.status !== status && status !== "active" && !window.confirm(`Promjena statusa na „${STATUS[status]}” zaustavlja pristup svih korisnika ureda. Postojeći podaci ostaju sačuvani. Spremiti promjenu?`)) return;
+    if (firm && firm.status !== status && status !== "active" && !(await confirm({ title: `Postaviti ured na „${STATUS[status]}”?`, body: <p>Svi korisnici ureda <b>{firm.name}</b> odmah gube pristup. Postojeći podaci ostaju sačuvani.</p>, confirmLabel: `Postavi „${STATUS[status]}”`, destructive: true }))) return;
     const removed = firm?.features.filter((key) => !features.includes(key)) || [];
-    if (removed.length && !window.confirm(`Sljedeće funkcije više neće biti dostupne korisnicima: ${removed.map((key) => FEATURE_CATALOG.find((feature) => feature.key === key)?.label || key).join(", ")}. Postojeći podaci ostaju sačuvani. Spremiti promjene?`)) return;
+    if (removed.length && !(await confirm({ title: "Ukloniti funkcije korisnicima?", body: <p>Sljedeće funkcije više neće biti dostupne: <b>{removed.map((key) => FEATURE_CATALOG.find((feature) => feature.key === key)?.label || key).join(", ")}</b>. Postojeći podaci ostaju sačuvani.</p>, confirmLabel: "Spremi promjene", destructive: true }))) return;
     setBusy(true); setError(""); setSuccess("");
     try {
       const response = await fetch(firm ? `/api/admin/firms/${firm.id}` : "/api/admin/firms", { method: firm ? "PATCH" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: name.trim(), legalName: legalName.trim(), accent, greeting: greeting.trim(), features, status }) });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || "Ured nije spremljen. Pokušajte ponovno.");
       if (!firm) router.push(`/admin/firms/${result.firm.id}?created=1#korisnici`);
-      else { setSuccess("Promjene su spremljene. Primjenjuju se pri sljedećem zahtjevu korisnika."); router.refresh(); }
+      else { setSuccess("Promjene su spremljene. Primjenjuju se pri sljedećem zahtjevu korisnika."); toast({ message: "Promjene ureda su spremljene." }); router.refresh(); }
     } catch (err) { setError(err instanceof Error ? err.message : "Veza nije uspjela. Pokušajte ponovno."); }
     finally { setBusy(false); }
   }

@@ -53,6 +53,7 @@ async function request(path,{cookie,method='GET',body,origin=base,form}={}){
 }
 async function login(email){const user=config.users.find(u=>u.email===email);const result=await request('/api/auth/login',{method:'POST',body:{email:user.email,password:user.password}});check(result.res.status===200,`login ${email}`);return result.res.headers.get('set-cookie').split(';')[0];}
 check((await request('/')).res.status===307,'anonymous home redirects');
+check((await request('/api/auth/demo',{method:'POST',body:{role:'admin'}})).res.status===404,'demo sign-in disabled outside demo mode');
 check((await request('/api/documents/unknown')).res.status===401,'anonymous API denied');
 check((await request('/api/sources',{method:'POST',origin:'https://invalid.test',body:{}})).res.status===403,'cross-origin writes denied');
 const admin=await login('admin@preview.test');const ana=await login('ana@preview.test');const ivan=await login('ivan@preview.test');
@@ -77,6 +78,46 @@ check((await request(evidencePath,{cookie:admin})).res.status===403,'platform ad
 check((await request(`/api/documents/wrong-document/evidence?chunk=${citation.chunkId}`,{cookie:ana})).res.status===404,'chunk cannot be attached to a different document');
 const chat=await request('/api/chat',{cookie:ana,method:'POST',body:{documentId:id,message:'Rok plaćanja'}});
 check(chat.res.status===200&&chat.data.citations[0]?.chunkId&&chat.data.citations[0]?.documentId===id,'document chat references retain exact source identifiers');
+// Streaming research: SSE protocol, typed sources, verified citations, private persistence.
+const sse=text=>text.split('\n\n').filter(f=>f.startsWith('data: ')).map(f=>JSON.parse(f.slice(6)));
+const research=await request('/api/research/stream',{cookie:ana,method:'POST',body:{question:'Rok za izvanredni otkaz ugovora o radu'}});
+const events=sse(research.text);
+check(research.res.status===200&&research.res.headers.get('content-type')?.startsWith('text/event-stream'),'research streams server-sent events');
+const complete=events.find(e=>e.type==='complete');
+check(events.some(e=>e.type==='status')&&complete?.message.sources.some(s=>s.kind==='statute'&&s.label.startsWith('ZOR')),'research answer carries typed statute sources');
+check([...complete.message.text.matchAll(/\[(\d+)\]/g)].every(m=>Number(m[1])>=1&&Number(m[1])<=complete.message.sources.length)&&complete.message.verification,'every answer citation resolves to a delivered source');
+const threadId=events.find(e=>e.type==='thread')?.threadId;
+const thread=await request(`/api/research/threads/${threadId}`,{cookie:ana});
+check(thread.res.status===200&&thread.data.thread.messages.length===2&&thread.data.thread.messages[1].sources.length>0,'research thread persisted with source snapshot');
+check((await request(`/api/research/threads/${threadId}`,{cookie:ivan})).res.status!==200,'research thread private to its author');
+check((await request('/api/research/threads',{cookie:ana})).data.threads.some(t=>t.id===threadId),'research history lists own thread');
+check((await request('/api/research/stream',{cookie:ana,method:'POST',body:{question:'test',threadId:'nepostojeci'}})).res.status===404,'unknown research thread rejected');
+const unit=await request('/api/legal/units/zor%3A116',{cookie:ana});
+check(unit.res.status===200&&/petnaest dana/.test(unit.data.text),'legal unit returns official article text');
+check((await request('/api/legal/units/zor%3A116')).res.status===401,'anonymous legal unit access denied');
+const docStream=sse((await request(`/api/documents/${id}/chat/stream`,{cookie:ana,method:'POST',body:{message:'Rok plaćanja'}})).text).find(e=>e.type==='complete');
+check(docStream?.message.sources.some(s=>s.kind==='firm'&&s.documentId===id&&s.chunkId),'document chat stream cites the document passage');
+const decision=await request('/api/review/decisions',{cookie:ana,method:'POST',body:{documentId:id,key:'usluge:raskid',status:'prihvaceno',comment:'Provjereno'}});
+check(decision.res.status===200&&decision.data.decision.status==='prihvaceno','review decision recorded');
+check((await request('/api/review/decisions',{cookie:ivan,method:'POST',body:{documentId:id,key:'usluge:raskid',status:'odbaceno'}})).res.status!==200,'other firm cannot decide on review');
+const playbook=await request('/api/playbooks',{cookie:ana,method:'POST',body:{name:'Interni QA asistent',instructions:'Uvijek navedi rokove i odgovorne osobe u tablici.'}});
+check(playbook.res.status===201&&(await request('/api/playbooks',{cookie:ana})).data.playbooks.some(p=>p.id===playbook.data.playbook.id),'firm admin creates firm playbook');
+// Review templates: firm admins only; keywords are escaped and raw regex is never accepted from users.
+const evil='(a+)+$';
+const tpl=await request('/api/review/templates',{cookie:ana,method:'POST',body:{name:'QA predložak',detectKeywords:['ugovor za testiranje'],detect:[evil],topics:[{title:'Rok plaćanja',criteria:[{label:'Rok plaćanja',keywords:['rok plaćanja',evil],patterns:[evil]}]}]}});
+check(tpl.res.status===201&&tpl.data.template.id.startsWith('ured-'),'firm admin creates review template');
+check(tpl.data.template.detect.length===0&&!tpl.data.template.topics[0].criteria[0].patterns,'unvetted regex patterns are dropped');
+check((await request('/api/review/templates',{cookie:ana,method:'POST',body:{name:'Bez tema',topics:[]}})).res.status===400,'template without topics rejected');
+check((await request('/api/review/templates',{cookie:ivan,method:'POST',body:{name:'X',topics:[{title:'T',criteria:[{label:'L',keywords:['k']}]}]}})).res.status===403,'member cannot create review templates');
+const started=Date.now();
+const preview=await request('/api/review/preview',{cookie:ana,method:'POST',body:{documentId:id,template:{name:'ReDoS',topics:[{title:'T',criteria:[{label:'L',keywords:['a'.repeat(60)+'!']}]}]}}});
+check(preview.res.status<500&&Date.now()-started<5000,'review preview stays fast on adversarial keywords');
+check((await request('/api/review/templates',{cookie:ana})).data.templates.some(t=>t.id===tpl.data.template.id),'firm template listed with built-ins');
+check((await request(`/api/review/templates?id=${tpl.data.template.id}`,{cookie:ana,method:'DELETE'})).res.status===200,'firm admin deletes review template');
+// Client scope: only the firm's own clients; clearing works.
+check((await request('/api/scope',{cookie:ana,method:'POST',body:{clientId:client.data.id}})).res.headers.get('set-cookie')?.includes(`ltb_klijent=${client.data.id}`),'client scope set for own client');
+check((await request('/api/scope',{cookie:ivan,method:'POST',body:{clientId:client.data.id}})).res.status!==200,'client scope rejects another firm\'s client');
+check(/ltb_klijent=;/.test((await request('/api/scope',{cookie:ana,method:'POST',body:{clientId:null}})).res.headers.get('set-cookie')??''),'client scope cleared');
 check((await request(`/api/documents/${id}`,{cookie:ana})).res.status===200,'owner reads document status');
 check((await request(`/api/documents/${id}`,{cookie:ivan})).res.status===404,'other firm cannot read document');
 const otherFiles=new FormData();otherFiles.append('file',new Blob(['Ovo je drugi sintetički dokument s dovoljno teksta za provjeru privatnog pristupa datotekama.']), 'other.txt');
@@ -115,6 +156,10 @@ check((await request('/zapisnik?korisnik=Fixture+actor&funkcija=documents',{cook
 check(!(await request('/zapisnik?korisnik=Missing',{cookie:ana})).text.includes('Unique audit fixture'),'activity empty filter excludes records');
 check((await request('/propisi?q=Synthetic&vaznost=visoka',{cookie:ana})).text.includes('Synthetic regulation filter'),'regulation search and severity filters');
 check(!(await request('/propisi?vaznost=niska',{cookie:ana})).text.includes('Synthetic regulation filter'),'regulation severity excludes unmatched record');
+const notes=await request('/api/notifications',{cookie:ana});
+check(notes.res.status===200&&notes.data.notifications.some(n=>n.kind==='regulation'&&n.title==='Synthetic regulation filter'),'notifications list unreviewed regulation changes');
+check((await request('/api/notifications',{cookie:admin})).res.status===403,'platform admin has no firm notifications');
+check((await request('/api/notifications')).res.status===401,'anonymous notifications denied');
 check((await request('/api/propisi',{cookie:ivan,method:'POST',body:{id:regId,reviewed:true}})).res.status===403,'restricted firm cannot review another firm regulation');
 check((await request('/api/propisi',{cookie:ana,method:'POST',body:{id:regId,reviewed:true}})).res.status===200,'regulation review saves');
 check(!(await request('/propisi?prikaz=novo',{cookie:ana})).text.includes('Synthetic regulation filter')&&(await request('/propisi?prikaz=pregledano',{cookie:ana})).text.includes('Synthetic regulation filter'),'reviewed state persists on fresh page requests');

@@ -4,16 +4,20 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { SOURCE_GROUPS, isSourceAvailable } from "@/lib/sources";
-import { IDatabase } from "@/components/Icons";
+import { IArrowRight, IChevronDown, IDatabase } from "@/components/Icons";
+import { useToast } from "@/components/Feedback";
 
 /** Gumb „Izvori prava” s padajućim panelom prekidača —
  *  dostupan na Dokumentima, Provjeri ugovora i Pravnim pitanjima. */
 export default function SourcesDropdown({
   sources,
+  connected = [],
 }: {
   sources: Record<string, boolean>;
+  connected?: string[];
 }) {
   const router = useRouter();
+  const toast = useToast();
   const [open, setOpen] = useState(false);
   const [state, setState] = useState(sources);
   const [error, setError] = useState("");
@@ -53,6 +57,7 @@ export default function SourcesDropdown({
       router.refresh();
     } catch {
       setError("Promjena nije spremljena. Pokušajte ponovno.");
+      toast({ tone: "error", message: "Promjena izvora nije spremljena." });
       setState((s) => ({ ...s, [id]: !next }));
     } finally {
       setBusy(null);
@@ -63,46 +68,42 @@ export default function SourcesDropdown({
     <div className="srcdd" ref={ref}>
       <button
         type="button"
-        className="btn btn-sm"
+        className="btn btn-secondary btn-md"
         aria-expanded={open}
-        aria-haspopup="menu"
+        aria-controls="sources-panel"
         onClick={() => setOpen((o) => !o)}
       >
-        <IDatabase size={15} />
+        <IDatabase aria-hidden="true" />
         Izvori prava
-        <span className="srcdd-count">{onCount}</span>
-        <span className={`srcdd-chev${open ? " up" : ""}`}>▾</span>
+        <span className="srcdd-count" aria-label={`${onCount} uključeno`}>{onCount}</span>
+        <IChevronDown className={`srcdd-chev${open ? " up" : ""}`} aria-hidden="true" />
       </button>
 
       {open && (
-        <div className="srcdd-panel" role="menu">
+        <div id="sources-panel" className="srcdd-panel" role="dialog" aria-label="Izvori prava">
           {SOURCE_GROUPS.map((g) => (
-            <div key={g.id} className="srcdd-group">
-              <div className="srcdd-title">{g.title}</div>
-              {g.items.map((it) => (
-                <button
-                  key={it.id}
-                  type="button"
-                  className="srcdd-row"
-                  onClick={() => toggle(it.id)}
-                  disabled={busy !== null || !isSourceAvailable(it.id)}
-                >
-                  <span className="srcdd-name">{it.name}{!isSourceAvailable(it.id) && <small className="muted"> · Nije povezano</small>}</span>
-                  <span
+            <div key={g.id} className="srcdd-group" role="group" aria-labelledby={`srcdd-${g.id}`}>
+              <div id={`srcdd-${g.id}`} className="srcdd-title">{g.title}</div>
+              {g.items.map((it) => {
+                const available = isSourceAvailable(it.id, connected);
+                return <div key={it.id} className="srcdd-row">
+                  <span className="srcdd-name" id={`src-${it.id}`}>{it.name}{!available && <small>Nije povezano</small>}</span>
+                  <button
+                    type="button"
                     role="switch"
                     aria-checked={!!state[it.id]}
+                    aria-labelledby={`src-${it.id}`}
                     className={`switch sw-sm${state[it.id] ? " on" : ""}`}
-                  >
-                    <span className="knob" />
-                  </span>
-                </button>
-              ))}
+                    onClick={() => toggle(it.id)}
+                    disabled={busy !== null || !available}
+                    title={available ? undefined : "Izvor još nije povezan s vašim uredom."}
+                  ><span className="knob" /></button>
+                </div>;
+              })}
             </div>
           ))}
           {error && <p role="alert" className="flash err">{error}</p>}
-          <Link href="/izvori" className="srcdd-all">
-            Puni pregled izvora →
-          </Link>
+          <Link href="/izvori" className="srcdd-all">Svi izvori prava<IArrowRight size={14} aria-hidden="true" /></Link>
         </div>
       )}
     </div>

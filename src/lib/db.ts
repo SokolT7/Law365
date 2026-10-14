@@ -36,6 +36,8 @@ export async function readWorkspaceDB(): Promise<DB> {
   if (!enabled("documents")) { db.documents = []; db.chunks = []; db.matters = []; }
   if (!enabled("clients")) { db.clients = []; db.matters = []; }
   if (!enabled("regulatory_tracking")) db.regUpdates = [];
+  // Research history is private to each user.
+  db.research = enabled("legal_questions") ? (db.research ?? []).filter((thread) => thread.createdById === session.user.id) : [];
   db.audit = enabled("activity_log") ? db.audit.filter(event => event.feature ? enabled(event.feature) : false) : [];
   for (const doc of db.documents) {
     doc.analyses = doc.analyses.filter(a => enabled(a.mode === "sazetak" ? "summary_analysis" : "detailed_analysis"));

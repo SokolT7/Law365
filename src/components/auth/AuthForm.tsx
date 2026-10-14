@@ -1,14 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Link from "next/link";
-import { ILock } from "@/components/Icons";
+import { IAlert, IArrowRight, IEye, IEyeOff, ILock } from "@/components/Icons";
+import { Button } from "@/components/Button";
 
 export default function AuthForm({ token, configured = true, awaitingActivation = false }: { token?: string; configured?: boolean; awaitingActivation?: boolean }) {
   const invitation = token !== undefined;
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [visible, setVisible] = useState(false);
+  const [caps, setCaps] = useState(false);
+  const passwordRef = useRef<HTMLInputElement>(null);
+  const onKey = (event: React.KeyboardEvent<HTMLInputElement>) => setCaps(event.getModifierState?.("CapsLock") ?? false);
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -32,6 +36,8 @@ export default function AuthForm({ token, configured = true, awaitingActivation 
     } catch (err) {
       setError(err instanceof Error ? err.message : "Veza nije uspjela. Pokušajte ponovno.");
       setBusy(false);
+      // Return the user to the field they need to retype.
+      if (passwordRef.current) { passwordRef.current.value = ""; passwordRef.current.focus(); }
     }
   }
 
@@ -46,11 +52,11 @@ export default function AuthForm({ token, configured = true, awaitingActivation 
       ) : (
         <form className="auth-form" onSubmit={submit} aria-busy={busy}>
           {!invitation && <label className="admin-field"><span>Poslovna e-adresa</span><input name="email" type="email" autoComplete="username" placeholder="ime@vas-ured.hr" required autoFocus /></label>}
-          <label className="admin-field"><span>{invitation ? "Nova lozinka" : "Lozinka"}</span><input name="password" type={visible ? "text" : "password"} autoComplete={invitation ? "new-password" : "current-password"} minLength={invitation ? 12 : undefined} required autoFocus={invitation} aria-describedby={invitation ? "password-guidance" : undefined} /></label>
+          <div className="admin-field"><label htmlFor="auth-password">{invitation ? "Nova lozinka" : "Lozinka"}</label><div className="password-field"><input ref={passwordRef} id="auth-password" name="password" type={visible ? "text" : "password"} autoComplete={invitation ? "new-password" : "current-password"} minLength={invitation ? 12 : undefined} required autoFocus={invitation} onKeyDown={onKey} onKeyUp={onKey} aria-invalid={error ? true : undefined} aria-describedby={[invitation && "password-guidance", error && "auth-error", caps && "caps-warning"].filter(Boolean).join(" ") || undefined} /><button type="button" className="password-toggle" aria-label={visible ? "Sakrij lozinku" : "Prikaži lozinku"} aria-pressed={visible} onClick={() => setVisible((value) => !value)}>{visible ? <IEyeOff /> : <IEye />}</button></div></div>
+          {caps && <p id="caps-warning" className="caps-warning"><IAlert size={14} aria-hidden="true" /> Uključen je Caps Lock.</p>}
           {invitation && <><p id="password-guidance" className="auth-field-help">Najmanje 12 znakova. Upotrijebite jedinstvenu lozinku koju ne koristite na drugim mjestima.</p><label className="admin-field"><span>Ponovite novu lozinku</span><input name="confirmation" type={visible ? "text" : "password"} autoComplete="new-password" minLength={12} required /></label></>}
-          <label className="auth-show-password"><input type="checkbox" checked={visible} onChange={(event) => setVisible(event.target.checked)} /> Prikaži lozinku</label>
           {error && <div id="auth-error" className="admin-notice error" role="alert">{error}</div>}
-          <button className="btn btn-primary" disabled={busy} type="submit">{busy ? (invitation ? "Aktiviranje računa…" : "Prijavljivanje…") : (invitation ? "Aktiviraj račun" : "Prijavi se")}<span aria-hidden="true">→</span></button>
+          <Button type="submit" variant="primary" size="lg" block loading={busy} iconEnd={busy ? undefined : <IArrowRight aria-hidden="true" />}>{invitation ? "Aktiviraj račun" : "Prijavi se"}</Button>
         </form>
       )}
       <div className="auth-help">{invitation ? <Link href="/prijava">Već imate račun? Prijavite se</Link> : <p>Za pristup ili obnovu lozinke obratite se svojoj kontakt-osobi u LTB timu. Pristup se dodjeljuje pojedinačno.</p>}</div>

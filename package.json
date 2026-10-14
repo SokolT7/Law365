@@ -3,14 +3,17 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "node scripts/start-demo.mjs",
+    "dev:platform": "next dev",
     "build": "next build",
     "start": "next start",
     "setup:admin": "node scripts/setup-admin.mjs",
     "typecheck": "tsc --noEmit",
     "test": "node scripts/test-platform.mjs",
     "test:integration": "node scripts/test-http.mjs",
-    "test:workspace": "node scripts/test-workspace.mjs"
+    "test:workspace": "node scripts/test-workspace.mjs",
+    "ingest:legal": "node scripts/ingest-legal.mjs",
+    "test:legal": "node scripts/test-legal.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "latest",

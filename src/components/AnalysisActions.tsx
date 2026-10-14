@@ -21,7 +21,7 @@ export default function AnalysisActions({ doc, modes = MODES }: { doc: DocumentR
         const dot = a.status === "analizirano" ? "lo" : a.status === "u_obradi" ? "mid" : "hi";
         const sub =
           a.status === "analizirano"
-            ? "Otvori analizu →"
+            ? "Otvori analizu"
             : a.status === "u_obradi"
             ? "U obradi…"
             : "Nije uspjelo — pokušaj ponovno";

@@ -14,10 +14,12 @@ Potpun plan i preostali koraci: [REDESIGN_PLAN.md](REDESIGN_PLAN.md).
 
 Potreban je Node.js 22.13+ iz grane 22 ili Node.js 24+ s podrškom za `node:sqlite`.
 
+Za brzi pregled bez postavljanja pokrenite demo (`npm run dev`, vidi „Lokalna demonstracija”). Stvarna platforma:
+
 ```sh
 npm install
 npm run setup:admin
-npm run dev
+npm run dev:platform
 ```
 
 `setup:admin` interaktivno traži ime, e-adresu i lozinku prvog LTB administratora. Lozinka se ne prikazuje, ne prosljeđuje argumentima naredbe i ne sprema kao običan tekst. Nema zadanih računa ili lozinki. Postojeći administrator ne prepisuje se ovom naredbom.
@@ -63,15 +65,40 @@ Sesije traju osam sati. Kolačić je HttpOnly/SameSite i Secure u produkcijskom 
 - Poslovi obrade i vlasništvo povratnog poziva spremaju se zajedno. Povratni poziv mora navesti odgovarajući posao i dokument te imati valjanu tajnu; ponovljeni rezultati ne prepisuju završenu obradu.
 - Ako AI nije konfiguriran, pretraga može vratiti jasno označeni izdvojeni tekst iz dokumenata. Pogreška aktivnog AI servisa ne zamjenjuje se tihim demo-odgovorom.
 - Učitani dokumenti trenutno se čuvaju kao izdvojeni tekst. **Trajno spremanje izvornih binarnih datoteka ostaje za sljedeću fazu.**
-- Aktivna je veza s dokumentima ureda. Katalog ostalih izvora prikazuje “Nije povezano”; nema tvrdnje da su vanjski izvori ili regulatorni feedovi aktivni. Stari demonstracijski korpus nije uključen u normalni rad.
+- Povezani izvori: dokumenti ureda te zajednička pravna baza (`data/legal.sqlite`) s propisima RH, sudskom praksom, EU propisima, presudama Suda EU-a, ESLJP-om i AZOP-om. Izvori koji nisu u bazi (HANFA, HAKOM, AZTN, DKOM, web) prikazuju se kao “Nije povezano”.
 
 Stare datoteke `data/db.json` i postojeći Redis sadržaj nisu obrisani niti automatski dodijeljeni novim uredima. Uvoz zahtijeva provjeru pripadnosti sadržaja i zaseban migracijski korak.
+
+## Pravni izvori i istraživanje
+
+Pravna baza gradi se iz službenih izvora i ne sadrži podatke ureda:
+
+```sh
+npm run ingest:legal            # sve izvore (oko 6 minuta)
+node scripts/ingest-legal.mjs --only=statutes         # samo propisi (s pročišćavanjem)
+node scripts/ingest-legal.mjs --only=cases --cases-per-topic=10
+node scripts/ingest-legal.mjs --only=cjeu,echr,azop
+```
+
+- **Narodne novine** — ZOR, ZOO, ZTD, ZPP, Zakon o provedbi Opće uredbe o zaštiti podataka, ZZP, ZZKPP; raščlanjeno po člancima s naslovima i odjeljcima. **Pročišćeni tekst gradi se automatski** (`scripts/lib/consolidate.mjs`): zakoni o izmjenama primjenjuju se kronološki (zamjena i brisanje članaka, stavaka i točaka, novi članci „12.a”, izmjene riječi i naslova). Upute koje se ne mogu pouzdano primijeniti ne pogađaju se — bilježe se uz članak, a korisnik vidi upozorenje i popis neugrađenih uputa. Izvorni tekst ostaje dostupan („Izvorni tekst (prije izmjena)”). Odluke Ustavnog suda nisu ugrađene. Trenutačno je primijenjeno oko 850 izmjena članaka, a ~155 uputa čeka ručnu provjeru (ispis na kraju ingest-a).
+- **Ured za publikacije EU (Cellar)** — GDPR, Direktiva 93/13, Direktiva 2011/7, Rim I, Bruxelles I.a, Direktiva 2011/83 (hrvatska verzija, po člancima).
+- **odluke.sudovi.hr** — odabrane odluke po temama iz `src/lib/legal/catalog.mjs`, s punim tekstom, ECLI, sudom, datumom, vrstom i stvarnim kazalom.
+- **Sud Europske unije (Cellar)** — odabrane presude na hrvatskom jeziku (zaštita podataka, radno vrijeme, nepoštene odredbe i krediti u CHF, hrvatski predmeti), s predmetom, datumom i ključnim pojmovima.
+- **ESLJP (HUDOC)** — presude protiv Hrvatske: naziv, broj zahtjeva, datum, članci Konvencije i ishod. Hrvatske prijevode Ureda zastupnika dopušteno je objavljivati samo u HUDOC-u, pa se **puni tekst ne pohranjuje** — otvara se na HUDOC-u.
+- **AZOP (azop.hr)** — objavljena (anonimizirana) rješenja Agencije za zaštitu osobnih podataka.
+- Pretraga: FTS5/bm25 s težinama polja, hrvatsko skraćivanje riječi, pravni sinonimi, IDF-ponderirana pokrivenost upita, izravne reference („ZOR 116”, „čl. 17.a ZOR-a”) i proširenje upita povratnom vezom (RM3): kad doslovni upit nađe premalo, dodaju se pojmovi koji se ponavljaju u najboljim pogocima, a korak pretrage pokazuje kojima. Semantička (vektorska) pretraga još nije uključena — zahtijeva indeks ugrađivanja i ostaje sljedeći korak.
+- Katalog (zakoni, izmjene, CELEX brojevi, teme sudske prakse) uređuje se u `src/lib/legal/catalog.mjs`; ponovno pokretanje zamjenjuje zapise na mjestu. Zahtjevi su razmaknuti kako bi se poštovali javni poslužitelji.
+
+Istraživanje (`/pitanja`) i razgovor o dokumentu odgovaraju kroz tok događaja (`POST /api/research/stream`, `POST /api/documents/:id/chat/stream`): vidljivi koraci pretrage, numerirani izvori pohranjeni uz odgovor (radi revizijskog traga), programski izračun rokova (ZPP čl. 112., hrvatski blagdani) i provjera citata nakon odgovora. Bez `ANTHROPIC_API_KEY` odgovor se sastavlja iz izdvojenih odlomaka i jasno je označen. Povijest istraživanja privatna je za svakog korisnika. Administrator ureda može dodati asistente ureda (`/api/playbooks`).
+
+Provjera ugovora koristi predloške (usluge, zakup, NDA, ugovor o radu) s temama, pitanjima i kriterijima; svaki kriterij navodi odlomak ugovora. Administrator ureda uređuje vlastite predloške (`/provjera/predlosci`) uz pregled uživo na odabranom dokumentu; kriteriji se zadaju ključnim riječima (bez korisničkih regularnih izraza). Odluke odvjetnika (prihvaćeno/odbačeno, komentar) spremaju se uz dokument. Pravila ureda ostaju dostupna kao zaseban predložak.
 
 ## Provjera
 
 ```sh
 npm test
 npm run test:workspace
+npm run test:legal        # zahtijeva npm run ingest:legal
 npm run build
 npm run test:integration
 npm run typecheck
@@ -85,17 +112,14 @@ Dovršiti normalizirani PostgreSQL/Supabase model i politike pristupa, privatnu 
 
 ## Lokalna demonstracija
 
-Za zasebnu demonstracijsku bazu s izmišljenim uredima, klijentima, dokumentom i unaprijed pripremljenim analizama:
-
 ```sh
-node scripts/setup-demo.mjs
-node scripts/start-demo.mjs
+npm run dev              # demo na http://localhost:3000
+npm run ingest:legal     # jednom: propisi, EU pravo i sudska praksa (oko 4 minute)
 ```
 
-Otvorite `http://localhost:3010/prijava`. Prva naredba ispisuje nasumičnu demo lozinku i sprema pristupne podatke u zanemarenu lokalnu datoteku `data/demo-credentials.json`. Računi: `admin@ltb.demo` (LTB administracija), `ured@ltb.demo` (sve funkcije), `osnovni@ltb.demo` (osnovne funkcije). Ponovno postavljanje odbija prepisati postojeću demo bazu. Za ponovno pokretanje dovoljan je `start-demo.mjs`.
+`npm run dev` pri prvom pokretanju sam priprema zasebnu demonstracijsku bazu (`data/demo.sqlite`) s izmišljenim uredima, klijentima i dokumentom te uključuje **demo prijavu**: na `/prijava` umjesto obrasca stoje dva gumba — „Uđi kao ured” i „Uđi kao administrator”. Druga vrata: `node scripts/start-demo.mjs --port 3010`.
 
-Demonstracija koristi samo `data/demo.sqlite`, dostupna je lokalno, a AI i n8n veze isključene su kako pregled ne bi slao podatke vanjskim servisima. Pripremljene analize služe za pregled; nova AI obrada nije aktivna. Glavna baza ostaje odvojena.
-
+Demo prijava radi samo uz `LTB_DEMO_MODE=1` (postavlja je skripta) i nikada u produkcijskoj izgradnji; stvarna instalacija i dalje koristi pozivnice i lozinke (`npm run dev:platform` pokreće platformu bez demo načina). AI i n8n veze u demonstraciji su isključene; za stvarne AI odgovore pokrenite `LTB_DEMO_AI=1 ANTHROPIC_API_KEY=… npm run dev`. Glavna baza ostaje odvojena.
 
 ## Radni prostor s izvorima
 

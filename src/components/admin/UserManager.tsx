@@ -3,12 +3,15 @@
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { PublicUser } from "@/lib/platform";
+import { useConfirm, useToast } from "@/components/Feedback";
 
 type Invitation = { invitationUrl: string; expiresAt: string; email: string };
 const STATUS: Record<string, string> = { invited: "Pozvan", active: "Aktivan", disabled: "Onemogućen" };
 
 export default function UserManager({ firmId, users }: { firmId: string; users: PublicUser[] }) {
   const router = useRouter();
+  const confirm = useConfirm();
+  const toast = useToast();
   const form = useRef<HTMLFormElement>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState("");
@@ -23,7 +26,7 @@ export default function UserManager({ firmId, users }: { firmId: string; users: 
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || "Promjena nije spremljena. Pokušajte ponovno.");
       if (result.invitationUrl) setInvitation({ invitationUrl: result.invitationUrl, expiresAt: result.expiresAt, email: result.user.email });
-      else { setInvitation(null); setNotice("Promjena je spremljena."); }
+      else { setInvitation(null); setNotice("Promjena je spremljena."); toast({ message: "Promjena je spremljena." }); }
       router.refresh();
       return true;
     } catch (err) { setError(err instanceof Error ? err.message : "Veza nije uspjela. Pokušajte ponovno."); return false; }
@@ -37,9 +40,9 @@ export default function UserManager({ firmId, users }: { firmId: string; users: 
   }
 
   async function update(user: PublicUser, change: Record<string, string>) {
-    if (change.status === "disabled" && !window.confirm(`Onemogućiti pristup za ${user.name}? Korisnik će biti odjavljen, a njegove pozivnice opozvane.`)) return;
-    if (change.action === "revoke_invitation" && !window.confirm(`Opozvati pozivnicu za ${user.name}? Postojeća poveznica više neće vrijediti.`)) return;
-    if (change.action === "invite" && !window.confirm(`Izraditi novu poveznicu za ${user.name}? Sve prethodne neiskorištene poveznice bit će opozvane.${user.status === "disabled" ? " Korisnik će ponovno dobiti mogućnost aktivacije računa." : ""}`)) return;
+    if (change.status === "disabled" && !(await confirm({ title: `Onemogućiti pristup za ${user.name}?`, body: "Korisnik će odmah biti odjavljen, a njegove pozivnice opozvane.", confirmLabel: `Onemogući ${user.name}`, destructive: true }))) return;
+    if (change.action === "revoke_invitation" && !(await confirm({ title: `Opozvati pozivnicu za ${user.name}?`, body: "Postojeća poveznica više neće vrijediti.", confirmLabel: "Opozovi pozivnicu", destructive: true }))) return;
+    if (change.action === "invite" && !(await confirm({ title: `Izraditi novu poveznicu za ${user.name}?`, body: `Sve prethodne neiskorištene poveznice bit će opozvane.${user.status === "disabled" ? " Korisnik će ponovno dobiti mogućnost aktivacije računa." : ""}`, confirmLabel: "Izradi poveznicu" }))) return;
     await request(`/api/admin/users/${user.id}`, "PATCH", change, user.id);
   }
 

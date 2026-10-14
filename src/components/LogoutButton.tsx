@@ -14,7 +14,7 @@ export default function LogoutButton({ compact = false }: { compact?: boolean })
       setBusy(false);
     }
   }
-  return <div><button type="button" className={compact ? "logout-button" : "btn"} onClick={logout} disabled={busy} aria-label="Odjava" title="Odjava">
+  return <div><button type="button" className={compact ? "btn btn-ghost btn-sm btn-icon" : "btn btn-secondary btn-md"} onClick={logout} disabled={busy} aria-busy={busy} aria-label={compact ? "Odjava" : undefined} title={compact ? "Odjava" : undefined}>
     {compact ? <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true"><path d="M10 5H5v14h5M14 8l4 4-4 4M8 12h10" strokeLinecap="round" strokeLinejoin="round" /></svg> : busy ? "Odjavljivanje…" : "Odjavi se"}
   </button>{error && <p role="alert" className="flash err">{error}</p>}</div>;
 }

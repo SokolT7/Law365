@@ -4,8 +4,10 @@ import { readWorkspaceDB as readDB } from "@/lib/db";
 import { workspaceSession } from "@/lib/workspace";
 import { hasFeature } from "@/lib/features";
 import { formatDate } from "@/lib/format";
-import { PageHeader, TenantBanner } from "@/components/ui";
-import { IUsers, IDocs, IFlag } from "@/components/Icons";
+import { PageHeader, EmptyState } from "@/components/ui";
+import AutoFilter from "@/components/AutoFilter";
+import { Suspense } from "react";
+import { IUsers, IDocs, IFlag, ISearch } from "@/components/Icons";
 
 export const dynamic = "force-dynamic";
 
@@ -32,17 +34,17 @@ export default async function ClientsPage({searchParams}:{searchParams:Promise<{
 
   return (
     <>
-      <PageHeader
-        title="Klijenti"
-        subtitle="Dokumenti, predmeti i regulatorna upozorenja po klijentu"
-      />
+      <PageHeader title="Klijenti" subtitle="Dokumenti, predmeti i regulatorna upozorenja po klijentu">
+        <Suspense><NewClientForm /></Suspense>
+      </PageHeader>
       <div className="content">
-        <TenantBanner />
-        <NewClientForm/>
-        <form className="register-toolbar" method="get"><label className="search-field"><span className="sr-only">Pretraži klijente</span><input type="search" name="q" defaultValue={q} placeholder="Pretraži naziv, djelatnost ili OIB…"/></label><button className="btn">Pretraži</button>{q && <Link className="btn btn-ghost" href="/klijenti">Očisti</Link>}</form>
+        <AutoFilter resultLabel={q ? `${clients.length} rezultata` : undefined} clearHref="/klijenti" active={!!q}>
+          <label className="search-field"><ISearch aria-hidden="true" /><span className="sr-only">Pretraži klijente</span><input type="search" name="q" defaultValue={q} placeholder="Pretraži naziv, djelatnost ili OIB…" /></label>
+        </AutoFilter>
         {clients.length === 0 ? (
-          <div className="card card-pad empty">
-            {q ? "Nema klijenata koji odgovaraju pretrazi." : "Još nema klijenata u ovom radnom prostoru."}
+          <div className="card">{q
+            ? <EmptyState icon={<ISearch />} title="Nema klijenata za ovu pretragu">Provjerite naziv ili OIB.</EmptyState>
+            : <EmptyState icon={<IUsers />} title="Još nema klijenata">Dodajte prvog klijenta i povežite s njim dokumente i provjere.</EmptyState>}
           </div>
         ) : (
           <div className="client-grid">
@@ -56,13 +58,13 @@ export default async function ClientsPage({searchParams}:{searchParams:Promise<{
                   </div>
                   {alerts.length > 0 && (
                     <span className="cc-alert" title="Nova regulatorna upozorenja">
-                      <IFlag size={12} /> {alerts.length}
+                      <IFlag size={12} aria-hidden="true" /> {alerts.length}
                     </span>
                   )}
                 </div>
                 <div className="cc-stats">
-                  <span><IDocs size={13} /> {docs.length} {docs.length === 1 ? "dokument" : "dokumenta"}</span>
-                  <span><IUsers size={13} /> {matters.length} {matters.length === 1 ? "predmet" : "predmeta"}</span>
+                  <span><IDocs size={14} aria-hidden="true" /> {docs.length} {docs.length === 1 ? "dokument" : docs.length < 5 && docs.length > 1 ? "dokumenta" : "dokumenata"}</span>
+                  <span><IUsers size={14} aria-hidden="true" /> {matters.length} {matters.length === 1 ? "predmet" : "predmeta"}</span>
                 </div>
                 <div className="cc-foot">
                   {client.oib && <span className="mono">OIB {client.oib}</span>}
