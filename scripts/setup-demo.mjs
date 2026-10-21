@@ -16,9 +16,9 @@ mkdirSync(path.dirname(filename), { recursive: true });
 process.env.LTB_DATABASE_PATH = filename;
 const temp = mkdtempSync(path.join(tmpdir(), 'ltb-demo-'));
 try {
-  for (const name of ['features', 'platform']) {
+  for (const name of ['features', 'public-demo', 'platform']) {
     const source = readFileSync(`src/lib/${name}.ts`, 'utf8');
-    writeFileSync(path.join(temp, `${name}.mjs`), ts.transpileModule(source, { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ES2022 } }).outputText.replaceAll('"./features"', '"./features.mjs"'));
+    writeFileSync(path.join(temp, `${name}.mjs`), ts.transpileModule(source, { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ES2022 } }).outputText.replaceAll('"./features"', '"./features.mjs"').replaceAll('"./public-demo"', '"./public-demo.mjs"'));
   }
   copyFileSync('src/lib/platform-core.mjs', path.join(temp, 'platform-core.mjs'));
   const p = await import(pathToFileURL(path.join(temp, 'platform.mjs')));

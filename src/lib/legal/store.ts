@@ -4,12 +4,13 @@ import path from "node:path";
 import { LEGAL_SCHEMA, migrateLegal } from "./schema.mjs";
 import { bestPassage, fold, synonyms, terms } from "@/lib/legal/text";
 import type { SourceKind, SourceRecord } from "@/lib/research/types";
+import { isPublicDemo, publicDemoFile } from "@/lib/public-demo";
 
 /** Shared, read-mostly store of public law built by scripts/ingest-legal.mjs. Never holds firm data. */
 let connection: DatabaseSync | null | undefined;
 function db(): DatabaseSync | null {
   if (connection !== undefined) return connection;
-  const filename = process.env.LTB_LEGAL_DB_PATH || path.join(process.cwd(), "data", "legal.sqlite");
+  const filename = isPublicDemo() ? publicDemoFile("legal.sqlite") : process.env.LTB_LEGAL_DB_PATH || path.join(process.cwd(), "data", "legal.sqlite");
   if (!existsSync(filename)) return (connection = null);
   connection = new DatabaseSync(filename);
   connection.exec(LEGAL_SCHEMA);

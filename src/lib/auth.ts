@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { AccessError, createSession, resolveSession, SESSION_MAX_AGE, type Session } from "./platform";
 import { hasFeature, type FeatureKey } from "./features";
+import { publicDemoSession } from "./demo";
 
 export { AccessError, hasFeature };
 export type { Session };
@@ -9,7 +10,7 @@ export const SESSION_COOKIE = "ltb_session";
 
 export async function getSession(): Promise<Session | null> {
   const token = (await cookies()).get(SESSION_COOKIE)?.value;
-  return token ? resolveSession(token) : null;
+  return (token ? resolveSession(token) : null) ?? publicDemoSession();
 }
 export async function requireSession(): Promise<Session> {
   const session = await getSession();

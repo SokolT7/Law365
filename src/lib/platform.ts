@@ -5,6 +5,7 @@ import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { PLATFORM_SCHEMA, hashPassword, verifyPassword } from "./platform-core.mjs";
 import { hasFeature, validateFeatures, type FeatureKey } from "./features";
 import type { AnalysisMode, DB } from "./types";
+import { isPublicDemo, publicDemoFile } from "./public-demo";
 
 export type Role = "platform_admin" | "firm_admin" | "member";
 export type FirmStatus = "draft" | "active" | "suspended";
@@ -29,10 +30,10 @@ export class AccessError extends Error {
 let connection: DatabaseSync | undefined;
 function database(): DatabaseSync {
   if (connection) return connection;
-  if (process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME) {
+  if (!isPublicDemo() && (process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME)) {
     throw new Error("LTB Law requires a persistent single-host disk. Configure a managed database before deploying to ephemeral hosting.");
   }
-  const filename = process.env.LTB_DATABASE_PATH || path.join(process.cwd(), "data", "platform.sqlite");
+  const filename = isPublicDemo() ? publicDemoFile("platform.sqlite") : process.env.LTB_DATABASE_PATH || path.join(process.cwd(), "data", "platform.sqlite");
   if (filename !== ":memory:") mkdirSync(path.dirname(filename), { recursive: true, mode: 0o700 });
   const db = new DatabaseSync(filename);
   db.exec("PRAGMA foreign_keys = ON; PRAGMA journal_mode = WAL; PRAGMA busy_timeout = 5000;");

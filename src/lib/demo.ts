@@ -1,11 +1,27 @@
-import { listFirms, listUsers } from "@/lib/platform";
+import { createSession, listFirms, listUsers, resolveSession, type Session } from "@/lib/platform";
+import { isPublicDemo } from "@/lib/public-demo";
 
 /**
- * One-click demo sign-in. Enabled only by `LTB_DEMO_MODE=1` (set by scripts/start-demo.mjs)
- * and never in production builds, so a real deployment cannot expose passwordless access.
+ * One-click demo sign-in. Enabled by `LTB_DEMO_MODE=1` (set by scripts/start-demo.mjs) outside production
+ * builds, or by the public demo, which runs only on bundled sample data.
  */
 export function isDemoMode(): boolean {
-  return process.env.LTB_DEMO_MODE === "1" && process.env.NODE_ENV !== "production";
+  return isPublicDemo() || (process.env.LTB_DEMO_MODE === "1" && process.env.NODE_ENV !== "production");
+}
+
+let publicToken: string | undefined;
+/**
+ * Public demo visitors need no sign-in: without a valid cookie they share the demo firm user.
+ * Each instance has its own database copy, so a cookie from another instance falls back here too.
+ */
+export function publicDemoSession(): Session | null {
+  if (!isPublicDemo()) return null;
+  const existing = publicToken ? resolveSession(publicToken) : null;
+  if (existing) return existing;
+  const user = demoUser("firm");
+  if (!user) return null;
+  publicToken = createSession(user.id);
+  return resolveSession(publicToken);
 }
 
 export const DEMO_ACCOUNTS = { admin: "admin@ltb.demo", firm: "ured@ltb.demo" } as const;

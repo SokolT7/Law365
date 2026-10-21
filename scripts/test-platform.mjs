@@ -13,10 +13,10 @@ process.env.LTB_DATABASE_PATH = path.join(directory, "test.sqlite");
 delete process.env.VERCEL;
 delete process.env.AWS_LAMBDA_FUNCTION_NAME;
 const lib = path.join(process.cwd(), "src/lib");
-for (const name of ["features", "platform"]) {
+for (const name of ["features", "public-demo", "platform"]) {
   const source = readFileSync(path.join(lib, `${name}.ts`), "utf8");
   const { outputText } = ts.transpileModule(source, { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ES2022 } });
-  writeFileSync(path.join(directory, `${name}.mjs`), outputText.replaceAll('"./features"', '"./features.mjs"'));
+  writeFileSync(path.join(directory, `${name}.mjs`), outputText.replaceAll('"./features"', '"./features.mjs"').replaceAll('"./public-demo"', '"./public-demo.mjs"'));
 }
 copyFileSync(path.join(lib, "platform-core.mjs"), path.join(directory, "platform-core.mjs"));
 const p = await import(pathToFileURL(path.join(directory, "platform.mjs")));
