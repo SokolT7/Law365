@@ -5,6 +5,7 @@ import { completeJob } from "@/lib/platform";
 import { apiRoute } from "@/lib/api-access";
 import { NextResponse } from "next/server";
 import { randomUUID } from "crypto";
+import { isPublicDemo } from "@/lib/public-demo";
 import { readDB, writeDB, writeDBWithJob, readJobDB, addAudit } from "@/lib/db";
 import { fireExtraction, getBaseUrl } from "@/lib/n8n";
 import { MODE_LABEL, analysisOf, documentText } from "@/lib/docs";
@@ -43,6 +44,7 @@ async function handlePOST(
   if (modeRaw !== "detaljna" && modeRaw !== "sazetak") throw new AccessError(400,"Nepoznata vrsta obrade.");
   const mode: AnalysisMode = modeRaw;
   const session = await requireFeature(mode === "sazetak" ? "summary_analysis" : "detailed_analysis");
+  if (isPublicDemo()) throw new AccessError(403, "U javnoj demonstraciji nova obrada dokumenata nije dostupna.");
 
   const db = await readDB();
   const doc = db.documents.find((d) => d.id === id);

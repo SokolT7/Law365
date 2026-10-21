@@ -3,13 +3,14 @@ import { requireSession, requireFeature } from "@/lib/auth";
 import { getFirm, readFirmData, writeFirmData, writeFirmDataAndRegisterJob } from "@/lib/platform";
 import { hasFeature, type FeatureKey } from "@/lib/features";
 import type { AnalysisMode, AuditEvent, DB } from "@/lib/types";
+import { isPublicDemo } from "@/lib/public-demo";
+import { readDemoFirmData, writeDemoFirmData } from "@/lib/demo-store";
 
 const snapshots = new WeakMap<DB, { firmId: string; revision: number; service: boolean }>();
 
-function load(firmId: string, actor: DB["user"], service = false): DB {
+function load(firmId: string, actor: DB["user"], stored: { data: DB; revision: number } | null, service = false): DB {
   const firm = getFirm(firmId);
   if (!firm) throw new Error("Ured nije pronađen.");
-  const stored = readFirmData(firmId);
   const db: DB = stored?.data ?? {
     firm: {id: firm.id, name: firm.name}, user: actor,
     clients: [], matters: [], documents: [], chunks: [], audit: [], regUpdates: [],
@@ -24,7 +25,8 @@ function load(firmId: string, actor: DB["user"], service = false): DB {
 export async function readDB(): Promise<DB> {
   const session = await requireSession();
   if (!session.firm || session.user.role === "platform_admin") throw new Error("Odaberite ovlašteni radni prostor.");
-  return load(session.firm.id, {id:session.user.id, name:session.user.name, role:session.user.role});
+  const stored = isPublicDemo() ? await readDemoFirmData(session.firm.id) : readFirmData(session.firm.id);
+  return load(session.firm.id, {id:session.user.id, name:session.user.name, role:session.user.role}, stored);
 }
 
 /** Presentation projection: disabled modules cannot leak through adjacent pages. Never write this copy. */
@@ -53,12 +55,12 @@ export async function writeDB(db: DB, feature?: FeatureKey): Promise<void> {
     const session = feature ? await requireFeature(feature) : await requireSession();
     if (session.firm?.id !== snapshot.firmId) throw new Error("Pristup nije dopušten.");
   }
-  snapshot.revision = writeFirmData(snapshot.firmId, db, snapshot.revision);
+  snapshot.revision = isPublicDemo() ? await writeDemoFirmData(snapshot.firmId, db, snapshot.revision) : writeFirmData(snapshot.firmId, db, snapshot.revision);
 }
 
 /** Service-only entry: callers must authenticate callbacks and resolve a persisted job first. */
 export function readJobDB(firmId: string): DB {
-  return load(firmId, {id:"processing-service",name:"Obrada dokumenata",role:"service"}, true);
+  return load(firmId, {id:"processing-service",name:"Obrada dokumenata",role:"service"}, readFirmData(firmId), true);
 }
 
 export function addAudit(db: DB, action: string, target: string, feature?: FeatureKey): void {
