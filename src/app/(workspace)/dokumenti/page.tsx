@@ -10,7 +10,8 @@ import { UploadButton } from "@/components/shell/SearchTrigger";
 import AutoFilter from "@/components/AutoFilter";
 import { MODE_LABEL } from "@/lib/docs";
 import Pagination from "@/components/Pagination";
-import { IDocs, ISearch } from "@/components/Icons";
+import { IDocs, ISearch, ISpark } from "@/components/Icons";
+import { ButtonLink } from "@/components/Button";
 import { paginate, queryValue, matchesQuery, type ListParams } from "@/lib/list-query";
 import type { DocStatus, DocumentRec } from "@/lib/types";
 
@@ -56,6 +57,7 @@ export default async function DocumentsPage({ searchParams }: { searchParams: Pr
   return (
     <>
       <PageHeader title="Dokumenti">
+        <ButtonLink href="/dokumenti/novi" icon={<ISpark />}>Sastavi s AI</ButtonLink>
         <UploadButton />
       </PageHeader>
       <div className="content">

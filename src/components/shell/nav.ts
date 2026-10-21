@@ -26,6 +26,7 @@ export const SETTINGS: NavLink = { href: "/postavke", label: "Postavke", Icon: I
 export const DESTINATIONS: NavLink[] = [
   ...NAV_LINKS,
   { href: "/provjera", label: "Provjera ugovora", Icon: IShield, feature: "contract_review", key: "u" },
+  { href: "/dokumenti/novi", label: "Sastavi dokument s AI", Icon: ISpark, feature: "documents" },
   ...SETTINGS_LINKS,
   SETTINGS,
 ];

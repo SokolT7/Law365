@@ -4,11 +4,11 @@ import type { StreamEvent } from "@/lib/research/types";
  * Wraps an event generator as a Server-Sent Events response. `onComplete` runs once with the
  * final message (persistence); errors become an `error` event instead of a broken stream.
  */
-export function sseResponse(events: AsyncGenerator<StreamEvent>, onComplete?: (event: Extract<StreamEvent, { type: "complete" }>) => Promise<void>): Response {
+export function sseResponse<E extends { type: string } = StreamEvent>(events: AsyncGenerator<E>, onComplete?: (event: Extract<E, { type: "complete" }>) => Promise<void>): Response {
   const encoder = new TextEncoder();
   const stream = new ReadableStream<Uint8Array>({
     async start(controller) {
-      const send = (event: StreamEvent) => {
+      const send = (event: E | { type: "error"; message: string }) => {
         try { controller.enqueue(encoder.encode(`data: ${JSON.stringify(event)}\n\n`)); } catch { /* client went away */ }
       };
       // Keep proxies from buffering or timing out during long answers.
@@ -16,7 +16,7 @@ export function sseResponse(events: AsyncGenerator<StreamEvent>, onComplete?: (e
       try {
         for await (const event of events) {
           if (event.type === "complete" && onComplete) {
-            try { await onComplete(event); }
+            try { await onComplete(event as Extract<E, { type: "complete" }>); }
             catch (error) { console.error("Research persistence failed", error); send({ type: "error", message: "Odgovor je prikazan, ali nije spremljen. Pokušajte ponovno." }); }
           }
           send(event);
