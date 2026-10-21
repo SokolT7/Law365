@@ -22,6 +22,22 @@
         "3010"
       ],
       "port": 3010
+    },
+    {
+      "name": "ltblaw-public-demo",
+      "runtimeExecutable": "env",
+      "runtimeArgs": [
+        "LTB_PUBLIC_DEMO=1",
+        "VERCEL=1",
+        "ANTHROPIC_API_KEY=",
+        "LTB_DEMO_SECRET=local-demo-only",
+        "npx",
+        "next",
+        "start",
+        "-p",
+        "3220"
+      ],
+      "port": 3220
     }
   ]
 }

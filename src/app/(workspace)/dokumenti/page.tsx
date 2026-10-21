@@ -7,12 +7,11 @@ import { hasFeature } from "@/lib/features";
 import { STATUS_LABEL } from "@/lib/format";
 import { PageHeader, EmptyState, RelativeTime } from "@/components/ui";
 import { UploadButton } from "@/components/shell/SearchTrigger";
-import SourcesDropdown from "@/components/SourcesDropdown";
 import AutoFilter from "@/components/AutoFilter";
-import { firmSources } from "@/lib/research/firm-sources";
 import { MODE_LABEL } from "@/lib/docs";
 import Pagination from "@/components/Pagination";
-import { IDocs, ISearch } from "@/components/Icons";
+import { IDocs, ISearch, ISpark } from "@/components/Icons";
+import { ButtonLink } from "@/components/Button";
 import { paginate, queryValue, matchesQuery, type ListParams } from "@/lib/list-query";
 import type { DocStatus, DocumentRec } from "@/lib/types";
 
@@ -57,8 +56,8 @@ export default async function DocumentsPage({ searchParams }: { searchParams: Pr
 
   return (
     <>
-      <PageHeader title="Dokumenti" subtitle={`${db.documents.length} ${db.documents.length === 1 ? "dokument" : "dokumenata"} u radnom prostoru ureda`}>
-        {session.user.role === "firm_admin" && hasFeature(session.firm, "source_settings") && <SourcesDropdown {...firmSources(db)} />}
+      <PageHeader title="Dokumenti">
+        <ButtonLink href="/dokumenti/novi" icon={<ISpark />}>Sastavi s AI</ButtonLink>
         <UploadButton />
       </PageHeader>
       <div className="content">

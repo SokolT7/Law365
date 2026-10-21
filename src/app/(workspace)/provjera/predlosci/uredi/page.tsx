@@ -17,8 +17,9 @@ export default async function EditTemplatePage({ searchParams }: { searchParams:
   const canEdit = session.user.role === "firm_admin";
   const title = template ? template.name : copyFrom ? `Kopija: ${copyFrom.name}` : "Novi predložak";
   return <>
-    <PageHeader title={title} subtitle={canEdit ? "Promjene se primjenjuju na sljedeću provjeru; prethodne odluke ostaju sačuvane." : "Predloške uređuje administrator ureda."} crumbs={[{ href: "/provjera", label: "Provjera ugovora" }, { href: "/provjera/predlosci", label: "Predlošci" }, { label: title }]} />
+    <PageHeader title={title} back={{ href: "/provjera/predlosci", label: "Predlošci provjere" }} />
     <div className="content">
+      {!canEdit && <p className="muted">Predloške uređuje administrator ureda.</p>}
       <TemplateEditor template={template} copyFrom={copyFrom} canEdit={canEdit} documents={[...db.documents].sort((a, b) => b.createdAt.localeCompare(a.createdAt)).map((d) => ({ id: d.id, title: d.title }))} />
     </div>
   </>;

@@ -10,7 +10,7 @@ export default function SearchTrigger() {
   useEffect(() => { setMac(/Mac|iPhone|iPad/.test(navigator.platform)); }, []);
   if (!workspace) return null;
   return <button type="button" className="search-trigger" onClick={workspace.openPalette} aria-keyshortcuts={mac ? "Meta+K" : "Control+K"}>
-    <ISearch aria-hidden="true" /><span>Pretraži ili skoči…</span><kbd>{mac ? "⌘K" : "Ctrl K"}</kbd>
+    <ISearch aria-hidden="true" /><span>Pretraži</span>
   </button>;
 }
 

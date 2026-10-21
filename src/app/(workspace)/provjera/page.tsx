@@ -8,8 +8,6 @@ import { workspaceSession } from "@/lib/workspace";
 import { hasFeature } from "@/lib/features";
 import { PageHeader, EmptyState } from "@/components/ui";
 import { UploadButton } from "@/components/shell/SearchTrigger";
-import SourcesDropdown from "@/components/SourcesDropdown";
-import { firmSources } from "@/lib/research/firm-sources";
 import { reviewDocument } from "@/lib/review";
 import { allTemplates, evaluateTemplate, suggestTemplate } from "@/lib/review-templates";
 import TemplateReview, { type TopicView } from "@/components/review/TemplateReview";
@@ -51,13 +49,7 @@ export default async function ReviewPage({ searchParams }: { searchParams: Promi
 
   return (
     <>
-      <PageHeader
-        title="Provjera ugovora"
-        subtitle="Provjera prema predlošcima za vrstu ugovora i pravilima ureda — svaki nalaz navodi odlomak i pravni temelj"
-        crumbs={selected ? [{ href: "/provjera", label: "Provjera ugovora" }, { label: selected.title }] : undefined}
-      >
-        {session.user.role === "firm_admin" && hasFeature(session.firm, "source_settings") && <SourcesDropdown {...firmSources(db)} />}
-        <Link className="btn btn-secondary btn-md" href="/provjera/predlosci">Predlošci</Link>
+      <PageHeader title="Provjera ugovora" back={selected ? { href: `/dokumenti/${selected.id}`, label: selected.title } : undefined}>
         <UploadButton contract>Novi ugovor</UploadButton>
       </PageHeader>
       <div className="content">

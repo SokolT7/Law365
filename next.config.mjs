@@ -17,6 +17,8 @@ const nextConfig = {
   serverExternalPackages: ["pdf-parse", "mammoth"],
   // pin the tracing root to this app (a stray lockfile in the home dir confuses inference)
   outputFileTracingRoot: __dirname,
+  // the public demo reads its bundled sample databases at runtime
+  ...(process.env.LTB_PUBLIC_DEMO === "1" ? { outputFileTracingIncludes: { "/**": ["./demo/*.sqlite"] } } : {}),
 };
 
 export default nextConfig;

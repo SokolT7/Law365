@@ -165,8 +165,10 @@ check((await request('/api/propisi',{cookie:ana,method:'POST',body:{id:regId,rev
 check(!(await request('/propisi?prikaz=novo',{cookie:ana})).text.includes('Synthetic regulation filter')&&(await request('/propisi?prikaz=pregledano',{cookie:ana})).text.includes('Synthetic regulation filter'),'reviewed state persists on fresh page requests');
 check((await request('/api/seed',{cookie:ana,method:'POST',body:{}})).res.status===404,'legacy reset removed');
 check((await request('/api/n8n/callback',{method:'POST',body:{}})).res.status===401,'unauthenticated callback rejected');
-for(const path of ['/','/dokumenti','/dokumenti/'+id,'/klijenti','/klijenti/'+client.data.id,'/provjera?dok='+id,'/pitanja','/propisi','/izvori','/zapisnik','/racun']){
+for(const path of ['/','/dokumenti','/dokumenti/'+id,'/klijenti','/klijenti/'+client.data.id,'/provjera?dok='+id,'/pitanja','/propisi','/izvori','/zapisnik','/racun','/postavke']){
  const page=await request(path,{cookie:ana});check(page.res.status===200&&!page.text.includes('NEXT_REDIRECT'),'firm screen '+path);}
+check((await request('/postavke',{cookie:ana})).text.includes('href="/izvori"'),'settings lists enabled modules');
+check(!(await request('/postavke',{cookie:ivan})).text.includes('href="/izvori"'),'settings hides disabled modules');
 check(!(await request('/',{cookie:ivan})).text.includes('Sintetički klijent QA'),'dashboard does not leak other firm data');
 for(const path of ['/admin','/admin/firms','/admin/firms/new'])check((await request(path,{cookie:admin})).res.status===200,'admin screen '+path);
 const created=await request('/api/admin/firms',{cookie:admin,method:'POST',body:{name:'QA privremeni ured',features:['documents'],status:'active',accent:'#806644'}});check(created.res.status===201 || created.res.status===200,'admin creates firm');

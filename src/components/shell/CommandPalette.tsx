@@ -2,8 +2,8 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { IChat, ICornerDownLeft, IDocs, IKeyboard, ISearch, IUsers } from "@/components/Icons";
-import { visibleGroups } from "@/components/shell/nav";
+import { IChat, ICornerDownLeft, IDocs, ISearch, IUsers } from "@/components/Icons";
+import { DESTINATIONS, NAV_LINKS, SETTINGS, SETTINGS_LINKS, allowed } from "@/components/shell/nav";
 
 export type PaletteData = {
   documents: { id: string; title: string; client?: string; type?: string }[];
@@ -11,7 +11,7 @@ export type PaletteData = {
   research?: { id: string; title: string; updatedAt: string }[];
 };
 
-type Item = { id: string; group: string; label: string; hint?: string; Icon: typeof IDocs; keywords?: string; run: () => void };
+type Item = { id: string; group: string; label: string; hint?: string; Icon: typeof IDocs; keywords?: string; onlyWhenSearched?: boolean; run: () => void };
 
 /** Diacritic-insensitive: "c" matches "č"/"ć", "d" matches "đ". */
 export function fold(value: string) {
@@ -29,7 +29,7 @@ export default function CommandPalette({ open, onClose, data, features, actions 
   onClose: () => void;
   data: PaletteData;
   features?: string[];
-  actions: { label: string; Icon: typeof IDocs; kbd?: string; run: () => void; keywords?: string }[];
+  actions: { label: string; Icon: typeof IDocs; run: () => void; keywords?: string }[];
 }) {
   const router = useRouter();
   const dialog = useRef<HTMLDialogElement>(null);
@@ -53,9 +53,10 @@ export default function CommandPalette({ open, onClose, data, features, actions 
 
   const items = useMemo<Item[]>(() => {
     const go = (href: string) => () => { onClose(); router.push(href); };
-    const pages: Item[] = visibleGroups(features).flatMap((group) => group.links.map((link) => ({ id: `page:${link.href}`, group: "Skoči na", label: link.label, hint: group.label, Icon: link.Icon, run: go(link.href) })));
-    pages.push({ id: "page:/racun", group: "Skoči na", label: "Moj račun", hint: "Ured", Icon: IUsers, keywords: "lozinka profil", run: go("/racun") });
-    const acts: Item[] = actions.map((action) => ({ id: `action:${action.label}`, group: "Radnje", label: action.label, hint: action.kbd ? `Prečac ${action.kbd}` : undefined, Icon: action.Icon, keywords: action.keywords, run: () => { onClose(); action.run(); } }));
+    const inSettings = new Set(SETTINGS_LINKS.map((link) => link.href));
+    const inMenu = new Set([...NAV_LINKS, SETTINGS].map((link) => link.href));
+    const pages: Item[] = allowed(DESTINATIONS, features).map((link) => ({ id: `page:${link.href}`, group: "Skoči na", label: link.label, hint: inSettings.has(link.href) ? "Postavke" : undefined, Icon: link.Icon, keywords: link.href === "/racun" ? "lozinka profil" : undefined, onlyWhenSearched: !inMenu.has(link.href), run: go(link.href) }));
+    const acts: Item[] = actions.map((action) => ({ id: `action:${action.label}`, group: "Radnje", label: action.label, Icon: action.Icon, keywords: action.keywords, run: () => { onClose(); action.run(); } }));
     const docs: Item[] = data.documents.map((doc) => ({ id: `doc:${doc.id}`, group: "Dokumenti", label: doc.title, hint: [doc.type, doc.client].filter(Boolean).join(" · "), Icon: IDocs, run: go(`/dokumenti/${doc.id}`) }));
     const research: Item[] = (data.research ?? []).map((t) => ({ id: `research:${t.id}`, group: "Istraživanja", label: t.title, hint: "Pravna pitanja", Icon: IChat, run: go(`/pitanja?nit=${t.id}`) }));
     const clients: Item[] = data.clients.map((client) => ({ id: `client:${client.id}`, group: "Klijenti", label: client.name, hint: client.sector && client.sector !== "—" ? client.sector : undefined, Icon: IUsers, run: go(`/klijenti/${client.id}`) }));
@@ -64,11 +65,11 @@ export default function CommandPalette({ open, onClose, data, features, actions 
 
   const results = useMemo(() => {
     const filtered = items.filter((item) => matches(query, item));
-    // Without a query keep the list short: actions, pages and the five most recent documents.
+    // Without a query keep the list short: actions, menu pages and the five most recent documents.
     if (!query) {
       let docCount = 0;
       let researchCount = 0;
-      return filtered.filter((item) => item.group !== "Klijenti" && (item.group !== "Dokumenti" || docCount++ < 5) && (item.group !== "Istraživanja" || researchCount++ < 3));
+      return filtered.filter((item) => !item.onlyWhenSearched && item.group !== "Klijenti" && (item.group !== "Dokumenti" || docCount++ < 5) && (item.group !== "Istraživanja" || researchCount++ < 3));
     }
     return filtered.slice(0, 40);
   }, [items, query]);
@@ -95,7 +96,6 @@ export default function CommandPalette({ open, onClose, data, features, actions 
     <div className="palette-input">
       <ISearch aria-hidden="true" />
       <input ref={input} value={query} onChange={(event) => setQuery(event.target.value)} onKeyDown={onKeyDown} placeholder="Pretražite dokumente, klijente ili radnje…" role="combobox" aria-expanded="true" aria-controls="palette-list" aria-activedescendant={results[index] ? `palette-${index}` : undefined} aria-autocomplete="list" />
-      <kbd>Esc</kbd>
     </div>
     <div ref={list} id="palette-list" className="palette-list" role="listbox" aria-label="Rezultati">
       {results.length === 0 && <div className="palette-empty">Nema rezultata za „{query}”.</div>}
@@ -111,12 +111,6 @@ export default function CommandPalette({ open, onClose, data, features, actions 
           </div>
         </div>;
       })}
-    </div>
-    <div className="palette-foot" aria-hidden="true">
-      <span><kbd>↑</kbd><kbd>↓</kbd> odabir</span>
-      <span><kbd>↵</kbd> otvori</span>
-      <span><kbd>⌘</kbd><kbd>↵</kbd> nova kartica</span>
-      <span className="push"><IKeyboard size={14} /> <kbd>?</kbd> svi prečaci</span>
     </div>
   </dialog>;
 }

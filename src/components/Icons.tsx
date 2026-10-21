@@ -156,3 +156,6 @@ export const IBell = ({ size, ...p }: P) => (
 export const IArrowUp = ({ size, ...p }: P) => (
   <svg {...base(size)} {...p}><path d="M12 19V5M6 11l6-6 6 6" /></svg>
 );
+export const ISettings = ({ size, ...p }: P) => (
+  <svg {...base(size)} {...p}><path d="M4 7h10M18 7h2M4 17h4M12 17h8" /><circle cx="16" cy="7" r="2" /><circle cx="10" cy="17" r="2" /></svg>
+);

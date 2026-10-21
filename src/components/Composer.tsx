@@ -51,7 +51,6 @@ const Composer = forwardRef<ComposerHandle, {
     <div className="composer-tools">
       {tools}
       <span className="spacer" />
-      <span className="hint" aria-hidden="true"><kbd>↵</kbd> pošalji · <kbd>⇧</kbd><kbd>↵</kbd> novi red</span>
       {busy && onStop
         ? <Button variant="secondary" iconOnly icon={<IStop />} className="comp-send" onClick={onStop}>Zaustavi odgovor</Button>
         : <Button type="submit" variant="primary" iconOnly icon={<IArrowRight />} className="comp-send" disabled={busy || !ready}>Pošalji pitanje</Button>}

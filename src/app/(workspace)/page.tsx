@@ -57,7 +57,7 @@ export default async function DashboardPage() {
 
   const first = user.name.split(" ")[0];
   return <>
-    <PageHeader title="Pregled ureda" subtitle={new Intl.DateTimeFormat("hr-HR", { weekday: "long", day: "numeric", month: "long", year: "numeric", timeZone: "Europe/Zagreb" }).format(now)}>
+    <PageHeader title="Početna">
       {documents && <UploadButton />}
     </PageHeader>
     <div className="content">

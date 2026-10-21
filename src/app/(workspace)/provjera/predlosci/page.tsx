@@ -15,7 +15,7 @@ export default async function TemplatesPage() {
   const admin = session.user.role === "firm_admin";
   const count = (n: number, one: string, few: string, many: string) => { const r = new Intl.PluralRules("hr-HR").select(n); return `${n} ${r === "one" ? one : r === "few" ? few : many}`; };
   return <>
-    <PageHeader title="Predlošci provjere" subtitle="Teme, pitanja i kriteriji prema kojima se provjeravaju ugovori" crumbs={[{ href: "/provjera", label: "Provjera ugovora" }, { label: "Predlošci" }]}>
+    <PageHeader title="Predlošci provjere" back={{ href: "/postavke", label: "Postavke" }}>
       {admin && <Link className="btn btn-primary btn-md" href="/provjera/predlosci/uredi"><IPlus aria-hidden="true" />Novi predložak</Link>}
     </PageHeader>
     <div className="content">

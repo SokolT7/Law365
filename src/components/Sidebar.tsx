@@ -2,14 +2,13 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { IChat, IChevronDown, IKeyboard, ILock, ILogout, IPanelLeft, IPlus, IShield, IUpload, IUser, IUsers } from "@/components/Icons";
+import { usePathname } from "next/navigation";
+import { IChevronDown, IKeyboard, ILogout, IPanelLeft, IUser } from "@/components/Icons";
 import Logo from "@/components/Logo";
 import { Button } from "@/components/Button";
 import { useToast } from "@/components/Feedback";
 import { useWorkspace } from "@/components/shell/WorkspaceContext";
-import { isActive, visibleGroups } from "@/components/shell/nav";
-import ClientScope from "@/components/shell/ClientScope";
+import { NAV_LINKS, SETTINGS, activeHref, allowed, type NavLink } from "@/components/shell/nav";
 
 export type NavCounts = Partial<Record<string, { value: number; alert?: boolean; label: string }>>;
 
@@ -41,9 +40,7 @@ function usePopover() {
   return { open, setOpen, wrap, trigger };
 }
 
-export default function Sidebar({ clients = [], clientScope = null, firmName, userName, userRole, features, counts = {}, open, onClose, collapsed, onToggleCollapse }: {
-  clients?: { id: string; name: string }[];
-  clientScope?: { id: string; name: string } | null;
+export default function Sidebar({ firmName, userName, userRole, features, counts = {}, open, onClose, collapsed, onToggleCollapse }: {
   firmName: string;
   userName: string;
   userRole: string;
@@ -55,14 +52,13 @@ export default function Sidebar({ clients = [], clientScope = null, firmName, us
   onToggleCollapse: () => void;
 }) {
   const pathname = usePathname();
-  const router = useRouter();
   const toast = useToast();
   const workspace = useWorkspace();
   const asideRef = useRef<HTMLElement>(null);
-  const newMenu = usePopover();
   const profileMenu = usePopover();
   const [loggingOut, setLoggingOut] = useState(false);
-  const has = (key: string) => !features || features.includes(key);
+  const links = allowed(NAV_LINKS, features);
+  const active = activeHref(pathname, [...links, SETTINGS]);
 
   // Mobile drawer: trap focus, close on Escape.
   useEffect(() => {
@@ -95,67 +91,31 @@ export default function Sidebar({ clients = [], clientScope = null, firmName, us
     }
   }
 
-  const newItems = [
-    has("documents") && { label: "Učitaj dokument", Icon: IUpload, kbd: "U", run: () => workspace?.openUpload() },
-    has("contract_review") && has("documents") && { label: "Nova provjera ugovora", Icon: IShield, run: () => workspace?.openUpload({ contract: true }) },
-    has("legal_questions") && { label: "Novo pravno pitanje", Icon: IChat, run: () => router.push("/pitanja") },
-    has("clients") && { label: "Novi klijent", Icon: IUsers, run: () => router.push("/klijenti?novi=1") },
-  ].filter(Boolean) as { label: string; Icon: typeof IUpload; kbd?: string; run: () => void }[];
-
   return (
     <>
       {open && <button className="nav-backdrop" tabIndex={-1} aria-label="Zatvori izbornik" onClick={onClose} />}
       <aside ref={asideRef} id="workspace-navigation" className={`sidebar${open ? " open" : ""}`} aria-label="Navigacija radnog prostora">
         <div className="side-head">
-          <Link href="/" className="brand" aria-label="LTB Law — pregled ureda">
+          <Link href="/" className="brand" aria-label="LTB Law — početna">
             <Logo size={30} />
             <span className="brand-name">LTB <span>Law</span></span>
           </Link>
-          <Button variant="ghost" size="sm" iconOnly icon={<IPanelLeft />} className="side-collapse" onClick={onToggleCollapse} title={collapsed ? "Proširi izbornik  [" : "Sažmi izbornik  ["}>
-            {collapsed ? "Proširi izbornik" : "Sažmi izbornik"}
-          </Button>
+          {/* Collapsing is a keyboard/search action; the way back out is always visible. */}
+          {collapsed && <Button variant="ghost" size="sm" iconOnly icon={<IPanelLeft />} className="side-collapse" onClick={onToggleCollapse} title="Proširi izbornik">Proširi izbornik</Button>}
         </div>
-
-        <div className="brand-firm" title={firmName}>
-          <span className="firm-mark" aria-hidden="true">{initialsOf(firmName) || "U"}</span>
-          <span className="firm-text"><span>Radni prostor ureda</span><b>{firmName}</b></span>
-        </div>
-
-        <ClientScope clients={clients} active={clientScope} />
-
-        {newItems.length > 0 && <div className="new-wrap" ref={newMenu.wrap}>
-          <Button ref={newMenu.trigger} variant="primary" block icon={<IPlus />} aria-label="Novo" aria-haspopup="menu" aria-expanded={newMenu.open} onClick={() => newMenu.setOpen(!newMenu.open)} title={collapsed ? "Novo" : undefined}>
-            <span className="new-label">Novo</span>
-          </Button>
-          {newMenu.open && <div className="menu down" role="menu" aria-label="Novo">
-            {newItems.map(({ label, Icon, kbd, run }) => <button key={label} type="button" role="menuitem" className="menu-item" onClick={() => { newMenu.setOpen(false); onClose(); run(); }}>
-              <Icon aria-hidden="true" />{label}{kbd && <kbd>{kbd}</kbd>}
-            </button>)}
-          </div>}
-        </div>}
 
         <div className="side-body">
           <div className="side-body-inner">
             <nav className="nav" aria-label="Glavni izbornik">
-              {visibleGroups(features).map((group) => <div className="nav-group" key={group.label}>
-                <div className="nav-group-label">{group.label}</div>
-                {group.links.map(({ href, label, Icon }) => {
-                  const active = isActive(pathname, href);
-                  const count = counts[href];
-                  return <Link key={href} href={href} onClick={onClose} className={`nav-link${active ? " active" : ""}`} aria-current={active ? "page" : undefined} title={collapsed ? label : undefined}>
-                    <Icon aria-hidden="true" /><span className="nav-label">{label}</span>
-                    {count && count.value > 0 && <span className={`nav-count${count.alert ? " alert" : ""}`} aria-label={count.label}>{count.value}</span>}
-                  </Link>;
-                })}
-              </div>)}
+              {links.map((link) => <NavItem key={link.href} link={link} active={active === link.href} count={counts[link.href]} collapsed={collapsed} onClick={onClose} />)}
             </nav>
 
             <div className="sidebar-foot" ref={profileMenu.wrap}>
-              <div className="workspace-private"><ILock size={13} aria-hidden="true" /> Pristup po odobrenju</div>
+              <NavItem link={SETTINGS} active={active === SETTINGS.href} collapsed={collapsed} onClick={onClose} />
               {profileMenu.open && <div className="menu up" role="menu" aria-label="Račun">
-                <div className="menu-label">{userName}</div>
+                <div className="menu-label"><b>{userName}</b><span>{firmName}</span></div>
                 <Link href="/racun" role="menuitem" className="menu-item" onClick={() => { profileMenu.setOpen(false); onClose(); }}><IUser aria-hidden="true" />Moj račun</Link>
-                <button type="button" role="menuitem" className="menu-item" onClick={() => { profileMenu.setOpen(false); workspace?.openShortcuts(); }}><IKeyboard aria-hidden="true" />Prečaci tipkovnice<kbd>?</kbd></button>
+                <button type="button" role="menuitem" className="menu-item" onClick={() => { profileMenu.setOpen(false); workspace?.openShortcuts(); }}><IKeyboard aria-hidden="true" />Prečaci tipkovnice</button>
                 <div className="menu-sep" role="separator" />
                 <button type="button" role="menuitem" className="menu-item danger" disabled={loggingOut} onClick={logout}><ILogout aria-hidden="true" />{loggingOut ? "Odjavljivanje…" : "Odjava"}</button>
               </div>}
@@ -170,4 +130,11 @@ export default function Sidebar({ clients = [], clientScope = null, firmName, us
       </aside>
     </>
   );
+}
+
+function NavItem({ link: { href, label, Icon }, active, count, collapsed, onClick }: { link: NavLink; active: boolean; count?: NavCounts[string]; collapsed: boolean; onClick: () => void }) {
+  return <Link href={href} onClick={onClick} className={`nav-link${active ? " active" : ""}`} aria-current={active ? "page" : undefined} title={collapsed ? label : undefined}>
+    <Icon aria-hidden="true" /><span className="nav-label">{label}</span>
+    {count && count.value > 0 && <span className={`nav-count${count.alert ? " alert" : ""}`} aria-label={count.label}>{count.value}</span>}
+  </Link>;
 }

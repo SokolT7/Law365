@@ -4,7 +4,7 @@ import { workspaceSession } from "@/lib/workspace";
 import { allTemplates, evaluateTemplate } from "@/lib/review-templates";
 import { reviewDocument } from "@/lib/review";
 import PrintButton from "@/components/review/PrintButton";
-import { Breadcrumbs } from "@/components/ui";
+import { BackLink } from "@/components/ui";
 
 export const dynamic = "force-dynamic";
 
@@ -28,7 +28,7 @@ export default async function ReviewReportPage({ searchParams }: { searchParams:
 
   return <div className="report">
     <div className="report-toolbar no-print">
-      <Breadcrumbs items={[{ href: "/provjera", label: "Provjera ugovora" }, { href: `/provjera?dok=${doc.id}${predlozak ? `&predlozak=${predlozak}` : ""}`, label: doc.title }, { label: "Izvještaj" }]} />
+      <BackLink href={`/provjera?dok=${doc.id}${predlozak ? `&predlozak=${predlozak}` : ""}`} label="Provjera ugovora" />
       <PrintButton />
     </div>
     <article className="report-page">

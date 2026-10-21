@@ -4,7 +4,7 @@ import { readWorkspaceDB } from "@/lib/db";
 import { workspaceSession } from "@/lib/workspace";
 import { hasFeature } from "@/lib/features";
 import { firmSources } from "@/lib/research/firm-sources";
-import { Breadcrumbs, RelativeTime } from "@/components/ui";
+import { BackLink, RelativeTime } from "@/components/ui";
 import SearchTrigger from "@/components/shell/SearchTrigger";
 import NotificationBell from "@/components/shell/NotificationBell";
 import { IFile, IShield } from "@/components/Icons";
@@ -22,11 +22,10 @@ export default async function DocumentWorkspace({params,searchParams}:{params:Pr
   if(hasFeature(session.firm,"summary_analysis"))modes.push("sazetak");
   if(hasFeature(session.firm,"detailed_analysis"))modes.push("detaljna");
   if(analiza && analiza!=="tekst" && !modes.includes(analiza as AnalysisMode))notFound();
-  const client=db.clients.find(c=>c.id===doc.clientId);
   const files=doc.files ?? [doc.filename];
   return <>
     <header className="document-header">
-      <Breadcrumbs className="document-breadcrumbs" items={[{href:"/dokumenti",label:"Dokumenti"},...(client && client.name!=="Ručno učitani dokument" && hasFeature(session.firm,"clients")?[{href:`/klijenti/${client.id}`,label:client.name}]:[]),{label:doc.title}]}/>
+      <BackLink href="/dokumenti" label="Dokumenti"/>
       <div className="document-heading-row">
         <div><h1>{doc.title}</h1>
           <div className="document-meta"><span className="badge neutral">{doc.type || "Dokument"}</span><span>Dodano <RelativeTime iso={doc.createdAt}/></span>

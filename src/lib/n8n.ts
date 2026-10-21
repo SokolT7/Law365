@@ -7,6 +7,8 @@ export function n8nSecret(): string {
 
 /** Webhook URL za odabranu vrstu obrade (uz fallback na zajednički). */
 export function webhookUrlFor(mode: AnalysisMode): string {
+  // The public demo never sends documents out for processing.
+  if (process.env.LTB_PUBLIC_DEMO === "1") return "";
   const fallback = process.env.N8N_DOC_WEBHOOK_URL || "";
   if (mode === "sazetak") return process.env.N8N_WEBHOOK_SAZETAK || fallback;
   return process.env.N8N_WEBHOOK_DETALJNA || fallback;

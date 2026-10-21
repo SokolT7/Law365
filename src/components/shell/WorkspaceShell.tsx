@@ -11,7 +11,7 @@ import CommandPalette, { type PaletteData } from "@/components/shell/CommandPale
 import UploadDialog from "@/components/shell/UploadDialog";
 import { WorkspaceContext, type UploadOptions, type WorkspaceApi } from "@/components/shell/WorkspaceContext";
 import NotificationBell from "@/components/shell/NotificationBell";
-import { isActive, visibleGroups } from "@/components/shell/nav";
+import { DESTINATIONS, NAV_LINKS, SETTINGS, activeHref, allowed } from "@/components/shell/nav";
 
 const COLLAPSE_KEY = "ltb:sidebar-collapsed";
 
@@ -23,7 +23,7 @@ function typingInField(target: EventTarget | null) {
 const SHORTCUTS: [string, string[]][] = [
   ["Pretraži i skoči", ["⌘", "K"]],
   ["Učitaj dokument", ["U"]],
-  ["Idi na Pregled", ["G", "H"]],
+  ["Idi na Početnu", ["G", "H"]],
   ["Idi na Dokumente", ["G", "D"]],
   ["Idi na Klijente", ["G", "K"]],
   ["Idi na Pravna pitanja", ["G", "P"]],
@@ -73,15 +73,14 @@ export default function WorkspaceShell({ children, firmName, userName, userRole,
 
   // Global keyboard shortcuts; single keys never fire while typing.
   useEffect(() => {
-    const go: Record<string, string> = { h: "/", d: "/dokumenti", k: "/klijenti", p: "/pitanja", r: "/propisi", u: "/provjera", z: "/zapisnik", i: "/izvori" };
+    const go = Object.fromEntries(allowed(DESTINATIONS, features).filter((link) => link.key).map((link) => [link.key, link.href]));
     const onKey = (event: KeyboardEvent) => {
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") { event.preventDefault(); setPaletteOpen((value) => !value); return; }
       if (event.metaKey || event.ctrlKey || event.altKey || typingInField(event.target) || document.querySelector("dialog[open]")) return;
       const key = event.key.toLowerCase();
       if (Date.now() - pendingG.current < 900 && go[key]) {
         pendingG.current = 0;
-        const target = visibleGroups(features).flatMap((g) => g.links).find((link) => link.href === go[key]);
-        if (target) { event.preventDefault(); router.push(target.href); }
+        event.preventDefault(); router.push(go[key]);
         return;
       }
       if (key === "g") { pendingG.current = Date.now(); return; }
@@ -123,17 +122,18 @@ export default function WorkspaceShell({ children, firmName, userName, userRole,
   }, [pathname]);
 
   const paletteActions = useMemo(() => [
-    canUpload && { label: "Učitaj dokument", Icon: IUpload, kbd: "U", keywords: "upload novi dodaj", run: () => openUpload() },
+    canUpload && { label: "Učitaj dokument", Icon: IUpload, keywords: "upload novi dodaj", run: () => openUpload() },
     canUpload && has("contract_review") && { label: "Nova provjera ugovora", Icon: IShield, keywords: "rizik ugovor", run: () => openUpload({ contract: true }) },
     has("legal_questions") && { label: "Novo pravno pitanje", Icon: IChat, keywords: "istraži pitaj", run: () => router.push("/pitanja") },
     has("clients") && { label: "Novi klijent", Icon: IUsers, keywords: "dodaj klijenta", run: () => router.push("/klijenti?novi=1") },
-    { label: collapsed ? "Proširi izbornik" : "Sažmi izbornik", Icon: IPanelLeft, kbd: "[", run: toggleCollapse },
-    { label: "Prečaci tipkovnice", Icon: IKeyboard, kbd: "?", run: openShortcuts },
-  ].filter(Boolean) as { label: string; Icon: typeof IUpload; kbd?: string; keywords?: string; run: () => void }[], [canUpload, has, openUpload, router, collapsed, toggleCollapse, openShortcuts]);
+    { label: collapsed ? "Proširi izbornik" : "Sažmi izbornik", Icon: IPanelLeft, run: toggleCollapse },
+    { label: "Prečaci tipkovnice", Icon: IKeyboard, run: openShortcuts },
+  ].filter(Boolean) as { label: string; Icon: typeof IUpload; keywords?: string; run: () => void }[], [canUpload, has, openUpload, router, collapsed, toggleCollapse, openShortcuts]);
 
-  // Mobile tab bar: up to four primary destinations plus "Više".
-  const preferred = ["/", "/dokumenti", "/pitanja", "/propisi", "/klijenti", "/provjera"];
-  const tabs = visibleGroups(features).flatMap((g) => g.links).filter((link) => preferred.includes(link.href)).sort((a, b) => preferred.indexOf(a.href) - preferred.indexOf(b.href)).slice(0, 4);
+  // Mobile tab bar: up to four menu destinations plus "Više".
+  const preferred = ["/", "/dokumenti", "/pitanja", "/propisi", "/klijenti"];
+  const tabs = allowed(NAV_LINKS, features).sort((a, b) => preferred.indexOf(a.href) - preferred.indexOf(b.href)).slice(0, 4);
+  const activeTab = activeHref(pathname, [...tabs, SETTINGS]);
   const accentStyle = { "--firm-accent": accent && /^#[0-9a-f]{6}$/i.test(accent) ? accent : undefined } as React.CSSProperties;
 
   return <WorkspaceContext.Provider value={api}>
@@ -141,19 +141,18 @@ export default function WorkspaceShell({ children, firmName, userName, userRole,
       <a className="skip-link" href="#main-content">Preskoči na sadržaj</a>
       <header className="mobile-bar">
         <Button variant="ghost" iconOnly icon={<IMenu />} className="menu-toggle" aria-controls="workspace-navigation" aria-expanded={drawer} onClick={() => setDrawer(true)}>Otvori izbornik</Button>
-        <Link href="/" className="brand" aria-label="LTB Law — pregled ureda"><Logo size={26} /><span className="brand-name">LTB <span>Law</span></span></Link>
+        <Link href="/" className="brand" aria-label="LTB Law — početna"><Logo size={26} /><span className="brand-name">LTB <span>Law</span></span></Link>
         <Button variant="ghost" iconOnly icon={<ISearch />} onClick={() => setPaletteOpen(true)}>Pretraži</Button>
         <NotificationBell />
-        {canUpload && <Button variant="ghost" iconOnly icon={<IUpload />} onClick={() => openUpload()}>Učitaj dokument</Button>}
       </header>
-      <Sidebar clients={palette.clients} clientScope={clientScope} firmName={firmName} userName={userName} userRole={userRole} features={features} counts={counts} open={drawer} onClose={() => setDrawer(false)} collapsed={collapsed} onToggleCollapse={toggleCollapse} />
+      <Sidebar firmName={firmName} userName={userName} userRole={userRole} features={features} counts={counts} open={drawer} onClose={() => setDrawer(false)} collapsed={collapsed} onToggleCollapse={toggleCollapse} />
       <main id="main-content" className="main">{children}</main>
       <nav className="tabbar" aria-label="Brza navigacija">
-        {tabs.map(({ href, short, Icon }) => {
-          const active = isActive(pathname, href);
+        {tabs.map(({ href, label, Icon }) => {
+          const active = activeTab === href;
           const count = counts[href];
           return <Link key={href} href={href} className={active ? "active" : undefined} aria-current={active ? "page" : undefined}>
-            <Icon aria-hidden="true" />{short}{count && count.value > 0 && <span className="tab-badge" aria-label={count.label}>{count.value}</span>}
+            <Icon aria-hidden="true" />{label}{count && count.value > 0 && <span className="tab-badge" aria-label={count.label}>{count.value}</span>}
           </Link>;
         })}
         <button type="button" onClick={() => setDrawer(true)} aria-controls="workspace-navigation" aria-expanded={drawer}><IMore aria-hidden="true" />Više</button>

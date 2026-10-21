@@ -19,10 +19,7 @@ export default async function IzvoriPage() {
 
   return (
     <>
-      <PageHeader
-        title="Izvori prava"
-        subtitle="Odaberite na koje se izvore AI oslanja pri analizi i odgovorima"
-      />
+      <PageHeader title="Izvori prava" back={{ href: "/postavke", label: "Postavke" }} />
       <div className="content">
         <TenantBanner />
 

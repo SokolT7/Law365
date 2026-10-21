@@ -1,40 +1,34 @@
 import Link from "next/link";
 import type { DocStatus } from "@/lib/types";
 import { STATUS_LABEL } from "@/lib/format";
-import { IBook, IChevronRight } from "@/components/Icons";
+import { IArrowLeft, IBook } from "@/components/Icons";
 import SearchTrigger from "@/components/shell/SearchTrigger";
 import NotificationBell from "@/components/shell/NotificationBell";
 
-export type Crumb = { href?: string; label: string };
+export type Back = { href: string; label: string };
 
-export function Breadcrumbs({ items, className = "crumbs" }: { items: Crumb[]; className?: string }) {
-  return <nav className={className} aria-label="Putanja">
-    {items.map((item, i) => <span key={`${item.label}-${i}`} className="contents">
-      {i > 0 && <IChevronRight aria-hidden="true" />}
-      {item.href ? <Link href={item.href}>{item.label}</Link> : <span aria-current="page">{item.label}</span>}
-    </span>)}
-  </nav>;
+/** The one way back from an inner page, shown above its title. */
+export function BackLink({ href, label, className = "back-link" }: Back & { className?: string }) {
+  return <Link href={href} className={className}><IArrowLeft aria-hidden="true" /><span>{label}</span></Link>;
 }
 
+/** Page title and the page's actions. No subtitles: if a page needs explaining, fix the page. */
 export function PageHeader({
   title,
-  subtitle,
-  crumbs,
+  back,
   search = true,
   children,
 }: {
   title: string;
-  subtitle?: string;
-  crumbs?: Crumb[];
+  back?: Back;
   search?: boolean;
   children?: React.ReactNode;
 }) {
   return (
     <header className="topbar">
       <div className="topbar-title">
-        {crumbs && <Breadcrumbs items={crumbs} />}
+        {back && <BackLink {...back} />}
         <h1>{title}</h1>
-        {subtitle && <div className="sub">{subtitle}</div>}
       </div>
       <div className="page-actions">
         {search && <SearchTrigger />}

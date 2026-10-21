@@ -1,5 +1,6 @@
 import { AccessError, apiError, ensureSameOrigin, privateJson, readJsonObject, withSessionCookie } from "@/lib/auth";
 import { authenticate } from "@/lib/platform";
+import { isPublicDemo } from "@/lib/public-demo";
 
 export const runtime = "nodejs";
 export async function POST(request: Request) {
@@ -9,6 +10,7 @@ export async function POST(request: Request) {
     if (typeof email !== "string" || email.length > 254 || typeof password !== "string" || password.length > 256) throw new AccessError(400, "Unesite e-poštu i lozinku.");
     const session = await authenticate(email, password);
     if (!session) throw new AccessError(401, "Prijava nije uspjela. Provjerite podatke ili se obratite LTB administratoru.");
+    if (isPublicDemo() && session.user.role === "platform_admin") throw new AccessError(403, "U demonstraciji je dostupan samo račun ureda.");
     return withSessionCookie(privateJson({ ok: true, redirect: session.user.role === "platform_admin" ? "/admin" : "/" }), session.user.id);
   } catch (error) { return apiError(error); }
 }

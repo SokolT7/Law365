@@ -180,12 +180,11 @@ export default function ResearchWorkspace({ initialThreads, initialThread, initi
           <div className="chat-stream" ref={stream} aria-live="polite" aria-busy={live.running || loadingThread} onScroll={() => { const el = stream.current; if (el) { atBottom.current = el.scrollHeight - el.scrollTop - el.clientHeight < 120; if (atBottom.current) setNewResponse(false); } }}>
             {empty && <div className="research-empty">
               <div className="chat-welcome"><span className="welcome-icon"><ISpark size={22} aria-hidden="true" /></span><h2>{playbook ? playbook.name : "Što želite istražiti?"}</h2>
-                <p>{playbook ? playbook.description : "Pretražujem propise RH, sudsku praksu, EU pravo i dokumente vašeg ureda. Svaka tvrdnja ima izvor koji možete otvoriti."}</p></div>
+                {playbook && <p>{playbook.description}</p>}</div>
               {playbook?.starters?.length ? <div className="starter-group"><h3>Predlošci asistenta</h3>{playbook.starters.map((s) => <button key={s} type="button" className="starter" onClick={() => { setInput(s); composer.current?.focus(); }}><span>{s}</span><IChevronDown className="starter-arrow" aria-hidden="true" /></button>)}</div> : null}
               <div className="starter-grid">{starters.map((g) => <div key={g.group} className="starter-group"><h3>{g.group}</h3>
                 {g.items.map((it) => <button key={it.title} type="button" className="starter" title={it.prompt} onClick={() => { setInput(it.prompt); composer.current?.focus(); }}><span>{it.title}</span><IChevronDown className="starter-arrow" aria-hidden="true" /></button>)}
               </div>)}</div>
-              <p className="t-sub starter-hint">Odabrani predložak upisuje se u polje — doradite ga i pošaljite.</p>
             </div>}
             {messages.map((m) => m.role === "user" ? <div key={m.id} className="bubble user"><div className="msg-text">{m.text}</div></div> : <AssistantMessage key={m.id} message={m} />)}
             {pending && <div className="bubble user"><div className="msg-text">{pending}</div></div>}
