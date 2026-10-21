@@ -1,27 +1,44 @@
-import { createSession, listFirms, listUsers, resolveSession, type Session } from "@/lib/platform";
+import { createHmac, timingSafeEqual } from "node:crypto";
+import { getFirm, getUser, listFirms, listUsers, type Session } from "@/lib/platform";
 import { isPublicDemo } from "@/lib/public-demo";
 
 /**
- * One-click demo sign-in. Enabled by `LTB_DEMO_MODE=1` (set by scripts/start-demo.mjs) outside production
- * builds, or by the public demo, which runs only on bundled sample data.
+ * One-click demo sign-in. Enabled only by `LTB_DEMO_MODE=1` (set by scripts/start-demo.mjs)
+ * and never in production builds, so a real deployment cannot expose passwordless access.
  */
 export function isDemoMode(): boolean {
-  return isPublicDemo() || (process.env.LTB_DEMO_MODE === "1" && process.env.NODE_ENV !== "production");
+  return process.env.LTB_DEMO_MODE === "1" && process.env.NODE_ENV !== "production";
 }
 
-let publicToken: string | undefined;
-/**
- * Public demo visitors need no sign-in: without a valid cookie they share the demo firm user.
- * Each instance has its own database copy, so a cookie from another instance falls back here too.
- */
-export function publicDemoSession(): Session | null {
-  if (!isPublicDemo()) return null;
-  const existing = publicToken ? resolveSession(publicToken) : null;
-  if (existing) return existing;
-  const user = demoUser("firm");
-  if (!user) return null;
-  publicToken = createSession(user.id);
-  return resolveSession(publicToken);
+/* ---------- Public demo sign-in ---------- */
+// Serverless functions do not share the sessions table, so the public demo signs a stateless cookie instead.
+
+export const DEMO_AUTH_COOKIE = "ltb_demo_auth";
+const DEMO_AUTH_MAX_AGE = 7 * 24 * 60 * 60;
+
+function demoSecret(): string {
+  const secret = process.env.LTB_DEMO_SECRET || process.env.KV_REST_API_TOKEN;
+  if (!secret) throw new Error("Public demo needs LTB_DEMO_SECRET or a KV store token to sign sessions.");
+  return secret;
+}
+const sign = (payload: string) => createHmac("sha256", demoSecret()).update(payload).digest("base64url");
+
+export function demoAuthCookie(userId: string): { value: string; maxAge: number } {
+  const payload = `${userId}.${Date.now() + DEMO_AUTH_MAX_AGE * 1000}`;
+  return { value: `${payload}.${sign(payload)}`, maxAge: DEMO_AUTH_MAX_AGE };
+}
+
+/** Firm users only: the platform administration would not persist across functions. */
+export function demoCookieSession(value: string | undefined): Session | null {
+  if (!isPublicDemo() || !value) return null;
+  const [userId, expires, signature] = value.split(".");
+  if (!userId || !expires || !signature || Number(expires) < Date.now()) return null;
+  const expected = Buffer.from(sign(`${userId}.${expires}`)), supplied = Buffer.from(signature);
+  if (expected.length !== supplied.length || !timingSafeEqual(expected, supplied)) return null;
+  const user = getUser(userId);
+  const firm = user?.firmId ? getFirm(user.firmId) : null;
+  if (!user || user.status !== "active" || user.role === "platform_admin" || !firm || firm.status !== "active") return null;
+  return { user, firm };
 }
 
 export const DEMO_ACCOUNTS = { admin: "admin@ltb.demo", firm: "ured@ltb.demo" } as const;

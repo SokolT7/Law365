@@ -1,6 +1,6 @@
 import { cookies } from "next/headers";
 import { Redis } from "@upstash/redis";
-import { AccessError, readFirmData } from "@/lib/platform";
+import { AccessError, readFirmData, writeFirmData } from "@/lib/platform";
 import type { DB } from "@/lib/types";
 
 /**
@@ -12,11 +12,12 @@ export const VISITOR_COOKIE = "ltb_demo_visitor";
 const TTL_SECONDS = 3 * 24 * 60 * 60;
 
 let client: Redis | undefined;
+const url = () => process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
+const token = () => process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
+/** Without Redis (a local single-process run) the instance's own copy is enough. */
+const hasRedis = () => Boolean(url() && token());
 function redis(): Redis {
-  const url = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
-  const token = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
-  if (!url || !token) throw new Error("Public demo needs a Redis store (KV_REST_API_URL / KV_REST_API_TOKEN).");
-  return (client ??= new Redis({ url, token }));
+  return (client ??= new Redis({ url: url()!, token: token()! }));
 }
 
 async function key(firmId: string): Promise<string> {
@@ -26,11 +27,13 @@ async function key(firmId: string): Promise<string> {
 }
 
 export async function readDemoFirmData(firmId: string): Promise<{ data: DB; revision: number } | null> {
+  if (!hasRedis()) return readFirmData(firmId);
   const stored = await redis().get<{ data: DB; revision: number }>(await key(firmId));
   return stored ?? readFirmData(firmId);
 }
 
 export async function writeDemoFirmData(firmId: string, data: DB, expectedRevision: number): Promise<number> {
+  if (!hasRedis()) return writeFirmData(firmId, data, expectedRevision);
   if (data.firm.id !== firmId) throw new AccessError(403, "Podaci ne pripadaju ovom uredu.");
   const k = await key(firmId);
   const current = (await redis().get<{ revision: number }>(k))?.revision ?? readFirmData(firmId)?.revision ?? 0;

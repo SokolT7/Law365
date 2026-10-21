@@ -30,6 +30,7 @@
         "LTB_PUBLIC_DEMO=1",
         "VERCEL=1",
         "ANTHROPIC_API_KEY=",
+        "LTB_DEMO_SECRET=local-demo-only",
         "npx",
         "next",
         "start",

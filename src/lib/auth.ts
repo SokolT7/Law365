@@ -2,15 +2,18 @@ import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { AccessError, createSession, resolveSession, SESSION_MAX_AGE, type Session } from "./platform";
 import { hasFeature, type FeatureKey } from "./features";
-import { publicDemoSession } from "./demo";
+import { DEMO_AUTH_COOKIE, demoAuthCookie, demoCookieSession } from "./demo";
+import { isPublicDemo } from "./public-demo";
 
 export { AccessError, hasFeature };
 export type { Session };
 export const SESSION_COOKIE = "ltb_session";
 
 export async function getSession(): Promise<Session | null> {
-  const token = (await cookies()).get(SESSION_COOKIE)?.value;
-  return (token ? resolveSession(token) : null) ?? publicDemoSession();
+  const jar = await cookies();
+  if (isPublicDemo()) return demoCookieSession(jar.get(DEMO_AUTH_COOKIE)?.value);
+  const token = jar.get(SESSION_COOKIE)?.value;
+  return token ? resolveSession(token) : null;
 }
 export async function requireSession(): Promise<Session> {
   const session = await getSession();
@@ -48,6 +51,11 @@ export function privateJson(value: unknown, status = 200): NextResponse {
   return NextResponse.json(value, { status, headers: { "Cache-Control": "no-store" } });
 }
 export function withSessionCookie(response: NextResponse, userId: string): NextResponse {
+  if (isPublicDemo()) {
+    const { value, maxAge } = demoAuthCookie(userId);
+    response.cookies.set(DEMO_AUTH_COOKIE, value, { httpOnly: true, secure: true, sameSite: "lax", path: "/", maxAge });
+    return response;
+  }
   response.cookies.set(SESSION_COOKIE, createSession(userId), { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax", path: "/", maxAge: SESSION_MAX_AGE });
   return response;
 }
