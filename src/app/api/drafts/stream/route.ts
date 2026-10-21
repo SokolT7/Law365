@@ -6,6 +6,7 @@ import { getMode } from "@/lib/ai/client";
 import { draftKind } from "@/lib/drafting/kinds";
 import { runDraft } from "@/lib/drafting/engine";
 import { sseResponse } from "@/lib/research/sse";
+import { firmSources } from "@/lib/research/firm-sources";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -30,7 +31,7 @@ async function handlePOST(req: Request) {
 
   return sseResponse(runDraft({
     kind, brief, clientName: client?.name, current, instruction: instruction || undefined,
-    sources: db.settings?.sources ?? {}, mode: getMode(), signal: req.signal,
+    sources: firmSources(db).sources, mode: getMode(), signal: req.signal,
   }));
 }
 
