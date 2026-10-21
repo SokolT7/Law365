@@ -24,7 +24,7 @@ export default async function ClientDetailPage({
   if (!client) {
     return (
       <>
-        <PageHeader title="Klijent nije pronađen" />
+        <PageHeader title="Klijent nije pronađen" back={{ href: "/klijenti", label: "Klijenti" }} />
         <div className="content">
           <div className="card"><EmptyState title="Klijent ne postoji ili vam nije dostupan" action={<Link href="/klijenti" className="btn btn-secondary btn-md"><IArrowLeft aria-hidden="true" />Natrag na klijente</Link>} /></div>
         </div>
@@ -41,7 +41,7 @@ export default async function ClientDetailPage({
   const alertsOpen = alerts.filter((r) => !r.reviewed);
   return (
     <>
-      <PageHeader title={client.name} subtitle={client.sector && client.sector !== "—" ? client.sector : undefined} crumbs={[{ href: "/klijenti", label: "Klijenti" }, { label: client.name }]}>
+      <PageHeader title={client.name} back={{ href: "/klijenti", label: "Klijenti" }}>
         {hasFeature(session.firm, "contract_review") && <UploadButton clientId={client.id} contract variant="secondary">Provjeri ugovor</UploadButton>}
         <UploadButton clientId={client.id}>Učitaj dokument</UploadButton>
       </PageHeader>

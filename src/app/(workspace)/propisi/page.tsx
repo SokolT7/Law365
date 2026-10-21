@@ -35,7 +35,7 @@ export default async function RegulatoryPage({ searchParams }: { searchParams: P
 
   return (
     <>
-      <PageHeader title="Praćenje propisa" subtitle="Promjene zakona i regulative povezane s vašim klijentima. Vanjski regulatorni izvori još nisu povezani." />
+      <PageHeader title="Propisi" />
       <div className="content">
         <ScopeNotice scope={!explicitClient ? scope : null} />
         <div className="toolbar-row">

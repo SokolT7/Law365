@@ -34,7 +34,7 @@ export default async function ClientsPage({searchParams}:{searchParams:Promise<{
 
   return (
     <>
-      <PageHeader title="Klijenti" subtitle="Dokumenti, predmeti i regulatorna upozorenja po klijentu">
+      <PageHeader title="Klijenti">
         <Suspense><NewClientForm /></Suspense>
       </PageHeader>
       <div className="content">

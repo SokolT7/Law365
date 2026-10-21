@@ -19,7 +19,7 @@ export default async function AuditPage({ searchParams }: { searchParams: Promis
   const filtered = [...db.audit].filter(e => matchesQuery(q,e.action,e.target,e.actor)).filter(e => !korisnik || e.actor === korisnik).filter(e => !funkcija || e.feature === funkcija).sort((a,b) => b.ts.localeCompare(a.ts));
   const paging = paginate(filtered,queryValue(params,"stranica"));
   return <>
-    <PageHeader title="Zapisnik aktivnosti" subtitle="Radnje i promjene zabilježene u vašem uredu · vrijeme Europe/Zagreb"/>
+    <PageHeader title="Zapisnik aktivnosti" back={{ href: "/postavke", label: "Postavke" }}/>
     <div className="content">
       <AutoFilter resultLabel={q || korisnik || funkcija ? `${filtered.length} zapisa` : undefined} clearHref="/zapisnik" active={!!(q || korisnik || funkcija)}>
         <label className="search-field"><ISearch aria-hidden="true" /><span className="sr-only">Pretraži aktivnosti</span><input type="search" name="q" defaultValue={q} placeholder="Radnja, predmet ili korisnik…"/></label>

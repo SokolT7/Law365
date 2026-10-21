@@ -10,7 +10,7 @@ export default async function PlaybooksPage() {
   const session = await workspaceSession("legal_questions");
   const db = await readDB();
   return <>
-    <PageHeader title="Asistenti" subtitle="Specijalizirani istraživački asistenti LTB Law i vašeg ureda" />
+    <PageHeader title="Asistenti" back={{ href: "/postavke", label: "Postavke" }} />
     <div className="content"><PlaybookManager initial={allPlaybooks(db.settings?.playbooks)} canManage={session.user.role === "firm_admin"} /></div>
   </>;
 }

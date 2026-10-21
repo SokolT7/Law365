@@ -4,7 +4,6 @@ import { readWorkspaceDB as readDB } from "@/lib/db";
 import { workspaceSession } from "@/lib/workspace";
 import { hasFeature } from "@/lib/features";
 import { PageHeader } from "@/components/ui";
-import SourcesDropdown from "@/components/SourcesDropdown";
 import ResearchWorkspace from "@/components/research/ResearchWorkspace";
 import { firmSources } from "@/lib/research/firm-sources";
 import { allPlaybooks, RESEARCH_STARTERS } from "@/lib/research/playbooks";
@@ -26,9 +25,7 @@ export default async function AskPage({ searchParams }: { searchParams: Promise<
 
   return (
     <>
-      <PageHeader title="Pravna pitanja" subtitle="Istraživanje propisa RH, sudske prakse, EU prava i dokumenata ureda — sa citatima koje možete provjeriti">
-        {session.user.role === "firm_admin" && hasFeature(session.firm, "source_settings") && <SourcesDropdown sources={scope.sources} connected={scope.connected} />}
-      </PageHeader>
+      <PageHeader title="Pitanja" />
       <div className="content research-content">
         <ResearchWorkspace
           key={thread?.id ?? `new-${asistent ?? ""}`}
